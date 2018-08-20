@@ -29,7 +29,7 @@ namespace AzureSearch.Linq
 
         public IQueryable<T> Query<T>()
         {
-            throw new AzureSearchQuery<T>(new AzureSearchQueryProvider());
+            return new AzureSearchQuery<T>(new AzureSearchQueryProvider(Connection, Logger));
         }
     }
 }

@@ -29,7 +29,7 @@ namespace AzureSearch.Linq
         /// </summary>
         public TimeSpan Timeout { get; }
 
-        public AzureSearchConnection(string searchName, string searchKey, string index = null, TimeSpan? timeout)
+        public AzureSearchConnection(string searchName, string searchKey, string index = null, TimeSpan? timeout = null)
         {
             if (timeout.HasValue)
             {
