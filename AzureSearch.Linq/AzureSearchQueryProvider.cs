@@ -1,6 +1,7 @@
 ﻿using AzureSearch.Linq.Async;
 using AzureSearch.Linq.Logging;
-using AzureSearch.Linq.Utlities;
+using AzureSearch.Linq.Mapping;
+using AzureSearch.Linq.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,8 @@ namespace AzureSearch.Linq
 
         internal ILogger Logger { get; }
 
+        internal IAzureSearchMapping Mapping { get;}
+
         /// <summary>
         /// Create a new AzureSearchQueryProvider for a given connection, logger and field prefix.
         /// </summary>
@@ -26,12 +29,14 @@ namespace AzureSearch.Linq
         /// <param name="mapping">A mapping to specify how queries and results are translated.</param>
         /// <param name="log">A log to receive any information or debugging messages.</param>
         /// <param name="retryPolicy">A policy to describe how to handle network issues.</param>
-        public AzureSearchQueryProvider(IAzureSearchConnection connection, ILogger logger)
+        public AzureSearchQueryProvider(IAzureSearchConnection connection, IAzureSearchMapping mapping, ILogger logger)
         {
             Argument.EnsureNotNull(nameof(connection), connection);
+            Argument.EnsureNotNull(nameof(mapping), mapping);
             Argument.EnsureNotNull(nameof(logger), logger);
 
             Connection = connection;
+            Mapping = mapping;
             Logger = logger;
         }
 

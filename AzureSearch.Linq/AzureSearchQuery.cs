@@ -1,4 +1,4 @@
-﻿using AzureSearch.Linq.Utlities;
+﻿using AzureSearch.Linq.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;

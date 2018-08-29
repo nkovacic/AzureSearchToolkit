@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace AzureSearch.Linq.Utlities
+namespace AzureSearch.Linq.Utilities
 {
     /// <summary>
     /// Argument validation static helpers to reduce noise in other methods.

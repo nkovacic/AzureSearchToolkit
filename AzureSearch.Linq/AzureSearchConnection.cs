@@ -1,5 +1,5 @@
 ﻿using AzureSearch.Linq.Logging;
-using AzureSearch.Linq.Utlities;
+using AzureSearch.Linq.Utilities;
 using Microsoft.Azure.Search;
 using Microsoft.Azure.Search.Models;
 using Microsoft.Rest.Azure;

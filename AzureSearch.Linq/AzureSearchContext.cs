@@ -1,5 +1,6 @@
 ﻿using AzureSearch.Linq.Logging;
-using AzureSearch.Linq.Utlities;
+using AzureSearch.Linq.Mapping;
+using AzureSearch.Linq.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,17 +20,23 @@ namespace AzureSearch.Linq
         /// </summary>
         public ILogger Logger { get; }
 
-        public AzureSearchContext(IAzureSearchConnection connection, ILogger logger = null)
+        /// <summary>
+        /// The mapping to describe how objects and their properties are mapped to AzureSearch.
+        /// </summary>
+        public IAzureSearchMapping Mapping { get; }
+
+        public AzureSearchContext(IAzureSearchConnection connection, IAzureSearchMapping mapping = null, ILogger logger = null)
         {
             Argument.EnsureNotNull(nameof(connection), connection);
 
             Connection = connection;
+            Mapping = mapping ?? new AzureSearchMapping();
             Logger = logger ?? NullLogger.Instance;
         }
 
         public IQueryable<T> Query<T>()
         {
-            return new AzureSearchQuery<T>(new AzureSearchQueryProvider(Connection, Logger));
+            return new AzureSearchQuery<T>(new AzureSearchQueryProvider(Connection, Mapping, Logger));
         }
     }
 }

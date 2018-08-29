@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AzureSearch.Linq.Utlities
+namespace AzureSearch.Linq.Utilities
 {
     static class AsyncHelper
     {

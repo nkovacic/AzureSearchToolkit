@@ -5,11 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Search.Service" Version="5.0.2" />
+    <Compile Remove="Utlities\**" />
+    <EmbeddedResource Remove="Utlities\**" />
+    <None Remove="Utlities\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Utlities\" />
+    <PackageReference Include="Microsoft.Azure.Search" Version="5.0.2" />
   </ItemGroup>
 
 </Project>
