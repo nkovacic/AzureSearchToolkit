@@ -11,10 +11,18 @@ using System.Linq.Expressions;
 
 namespace AzureSearch.Linq.Request.Visitors
 {
-    public class CriteriaExpressionVisitor: ExpressionVisitor
+    internal abstract class CriteriaExpressionVisitor: ExpressionVisitor
     {
         protected readonly IAzureSearchMapping Mapping;
         protected readonly Type SourceType;
+
+        static readonly RangeComparison[] invertedRangeComparison =
+        {
+            RangeComparison.LessThan,
+            RangeComparison.LessThanOrEqual,
+            RangeComparison.GreaterThan,
+            RangeComparison.GreaterThanOrEqual
+        };
 
         protected CriteriaExpressionVisitor(IAzureSearchMapping mapping, Type sourceType)
         {
@@ -79,7 +87,7 @@ namespace AzureSearch.Linq.Request.Visitors
                 case "ContainsAny":
                     if (m.Arguments.Count == 2)
                     {
-                        return VisitContains("ContainsAny", m.Arguments[0], m.Arguments[1]);
+                        return VisitContains("ContainsAny", m.Arguments[0], m.Arguments[1], TermsExecutionMode.Or);
                     }
                         
                     break;
@@ -87,23 +95,7 @@ namespace AzureSearch.Linq.Request.Visitors
                 case "ContainsAll":
                     if (m.Arguments.Count == 2)
                     {
-                        return VisitContains("ContainsAll", m.Arguments[0], m.Arguments[1]);
-                    }
-                        
-                    break;
-
-                case "Regexp":
-                    if (m.Arguments.Count == 2)
-                    {
-                        return VisitRegexp(m.Arguments[0], m.Arguments[1]);
-                    }
-                        
-                    break;
-
-                case "Prefix":
-                    if (m.Arguments.Count == 2)
-                    {
-                        return VisitPrefix(m.Arguments[0], m.Arguments[1]);
+                        return VisitContains("ContainsAll", m.Arguments[0], m.Arguments[1], TermsExecutionMode.And);
                     }
                         
                     break;
@@ -131,17 +123,26 @@ namespace AzureSearch.Linq.Request.Visitors
             {
                 case "Contains":  // Where(x => x.StringProperty.Contains(value))
                     if (m.Arguments.Count == 1)
+                    {
                         return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "*{0}*", m.Method.Name);
+                    }
+                        
                     break;
 
                 case "StartsWith": // Where(x => x.StringProperty.StartsWith(value))
                     if (m.Arguments.Count == 1)
+                    {
                         return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "{0}*", m.Method.Name);
+                    }
+                        
                     break;
 
                 case "EndsWith": // Where(x => x.StringProperty.EndsWith(value))
                     if (m.Arguments.Count == 1)
+                    {
                         return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "*{0}", m.Method.Name);
+                    }
+                       
                     break;
             }
 
@@ -250,30 +251,6 @@ namespace AzureSearch.Linq.Request.Visitors
                 return Visit(Expression.Equal(e, Expression.Constant(!wasNegative)));
 
             return e;
-        }
-
-        Expression VisitPrefix(Expression fieldExpression, Expression startsWithExpression)
-        {
-            // Do not use ConstantMemberPair - these expressions are not reversible
-            if (fieldExpression is MemberExpression && startsWithExpression is ConstantExpression)
-            {
-                var fieldName = Mapping.GetFieldName(SourceType, (MemberExpression)fieldExpression);
-                return new CriteriaExpression(new PrefixCriteria(fieldName, ((ConstantExpression)startsWithExpression).Value.ToString()));
-            }
-
-            throw new NotSupportedException("ElasticMethods.Prefix must take a member for field and a constant for startsWith");
-        }
-
-        Expression VisitRegexp(Expression fieldExpression, Expression regexpExpression)
-        {
-            // Do not use ConstantMemberPair - these expressions are not reversible
-            if (fieldExpression is MemberExpression && regexpExpression is ConstantExpression)
-            {
-                var fieldName = Mapping.GetFieldName(SourceType, (MemberExpression)fieldExpression);
-                return new CriteriaExpression(new RegexpCriteria(fieldName, ((ConstantExpression)regexpExpression).Value.ToString()));
-            }
-
-            throw new NotSupportedException("ElasticMethods.Regexp must take a member for field and a constant for startsWith");
         }
 
         Expression VisitEnumerableContainsMethodCall(Expression source, Expression match)
