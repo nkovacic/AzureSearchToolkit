@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Folder Include="Configuration\" />
+    <Folder Include="App_Data\" />
   </ItemGroup>
 
   <ItemGroup>

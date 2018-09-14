@@ -14,7 +14,10 @@ namespace AzureSearchToolkit.IntegrationTest.Models
         [IsFilterable]
         public string Id { get; set; }
 
-        [IsFacetable, IsSortable]
+        [IsFilterable, IsSortable]
+        public DateTime? CreatedAt { get; set; }
+
+        [IsFacetable, IsFilterable, IsSortable]
         public decimal Price { get; set; }
 
         [IsSearchable]

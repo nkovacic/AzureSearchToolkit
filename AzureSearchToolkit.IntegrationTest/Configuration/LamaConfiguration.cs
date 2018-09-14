@@ -15,6 +15,11 @@ namespace AzureSearchToolkit.IntegrationTest.Configuration
 
         public static LamaConfiguration Current()
         {
+            if (_current == null)
+            {
+                _current = new LamaConfiguration("local.settings.json");
+            }
+
             return _current;
         }
 

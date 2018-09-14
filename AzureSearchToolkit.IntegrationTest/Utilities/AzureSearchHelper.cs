@@ -1,5 +1,6 @@
 ﻿using AzureSearchToolkit.IntegrationTest.Configuration;
 using AzureSearchToolkit.Logging;
+using AzureSearchToolkit.Request;
 using Microsoft.Azure.Search;
 using Microsoft.Azure.Search.Models;
 using System;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace AzureSearchToolkit.IntegrationTest.Utilities
 {
-    class AzureSearchHelper
+    class AzureSearchHelper: IDisposable
     {
         private string _searchName;
 
@@ -87,42 +88,42 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
         public async Task<ServiceResult<bool>> CreateDocumentInIndex<T>(T document, string indexName = null) where T : class
         {
-            return await ChangeDocumentInIndex(document, indexName, EntityCrudType.Create);
+            return await ChangeDocumentInIndex(document, indexName, AzureSearchIndexType.Upload);
         }
 
         public async Task<ServiceResult<bool>> CreateDocumentsInIndex<T>(IEnumerable<T> documents, string indexName = null) where T : class
         {
-            return await ChangeDocumentsInIndex(documents, indexName, EntityCrudType.Create);
+            return await ChangeDocumentsInIndex(documents, indexName, AzureSearchIndexType.Upload);
         }
 
         public async Task<ServiceResult<bool>> DeleteDocumentInIndex<T>(T document, string indexName = null) where T : class
         {
-            return await ChangeDocumentInIndex(document, indexName, EntityCrudType.Delete);
+            return await ChangeDocumentInIndex(document, indexName, AzureSearchIndexType.Delete);
         }
 
         public async Task<ServiceResult<bool>> DeleteDocumentsInIndex<T>(IEnumerable<T> documents, string indexName = null) where T : class
         {
-            return await ChangeDocumentsInIndex(documents, indexName, EntityCrudType.Delete);
+            return await ChangeDocumentsInIndex(documents, indexName, AzureSearchIndexType.Delete);
         }
 
         public async Task<ServiceResult<bool>> ChangeDocumentInIndex<T>(T document, string indexName = null,
-            EntityCrudType crudType = EntityCrudType.CreateOrUpdate) where T : class
+            AzureSearchIndexType crudType = AzureSearchIndexType.MergeOrUpload) where T : class
         {
             return await ChangeDocumentsInIndex(new[] { document }, indexName, crudType);
         }
 
         public async Task<ServiceResult<bool>> ChangeDocumentsInIndex<T>(IEnumerable<T> documents, string indexName = null,
-            EntityCrudType crudType = EntityCrudType.CreateOrUpdate) where T : class
+            AzureSearchIndexType crudType = AzureSearchIndexType.MergeOrUpload) where T : class
         {
-            return await ChangeDocumentsInIndex(documents, new List<EntityCrudType>() { crudType }, indexName);
+            return await ChangeDocumentsInIndex(documents, new List<AzureSearchIndexType>() { crudType }, indexName);
         }
 
-        public async Task<ServiceResult<bool>> ChangeDocumentsInIndex<T>(Dictionary<T, EntityCrudType> documents, string indexName = null) where T : class
+        public async Task<ServiceResult<bool>> ChangeDocumentsInIndex<T>(Dictionary<T, AzureSearchIndexType> documents, string indexName = null) where T : class
         {
             return await ChangeDocumentsInIndex(documents.Keys, documents.Values, indexName);
         }
 
-        public async Task<ServiceResult<bool>> ChangeDocumentsInIndex<T>(IEnumerable<T> documents, IEnumerable<EntityCrudType> crudTypes,
+        public async Task<ServiceResult<bool>> ChangeDocumentsInIndex<T>(IEnumerable<T> documents, IEnumerable<AzureSearchIndexType> crudTypes,
             string indexName = null) where T : class
         {
             var serviceResult = new ServiceResult<bool>();
@@ -142,7 +143,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
             foreach (var document in documents)
             {
-                var crudType = EntityCrudType.Create;
+                var crudType = AzureSearchIndexType.Upload;
                 IndexAction<T> indexAction = null;
 
                 if (crudTypes.Count() > documentCounter)
@@ -156,13 +157,13 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
                 switch (crudType)
                 {
-                    case EntityCrudType.Create:
+                    case AzureSearchIndexType.Upload:
                         indexAction = IndexAction.Upload(document);
                         break;
-                    case EntityCrudType.Delete:
+                    case AzureSearchIndexType.Delete:
                         indexAction = IndexAction.Delete(document);
                         break;
-                    case EntityCrudType.Update:
+                    case AzureSearchIndexType.Merge:
                         indexAction = IndexAction.Merge(document);
                         break;
                     default:
@@ -551,6 +552,11 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
             {
                 return $"{environment.ToLowerInvariant().First()}-{index.ToLowerInvariant()}";
             }
+        }
+
+        public void Dispose()
+        {
+            _serviceClient.Dispose();
         }
     }
 }
