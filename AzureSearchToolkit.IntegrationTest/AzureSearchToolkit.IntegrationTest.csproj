@@ -27,4 +27,13 @@
     <ProjectReference Include="..\AzureSearchToolkit\AzureSearchToolkit.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="App_Data\listings-mocked.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="local.settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

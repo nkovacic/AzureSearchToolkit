@@ -57,7 +57,7 @@ namespace AzureSearchToolkit.IntegrationTest
         public void LoadFromJsonToAzureSearch()
         {
             var baseDirectory = AppContext.BaseDirectory;
-            var mockedDataPath = Path.Combine(baseDirectory, "App_Data/listings_mocked.json");
+            var mockedDataPath = Path.Combine(baseDirectory, "App_Data\\listings-mocked.json");
 
             var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath));
 
@@ -70,7 +70,7 @@ namespace AzureSearchToolkit.IntegrationTest
                     throw createIndexServiceResult.PotentialException.GetException();
                 }
 
-                var uploadOrMergeListingsServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.ChangeDocumentsInIndex(listings));
+                var uploadOrMergeListingsServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.ChangeDocumentsInIndex(listings, Index));
 
                 if (!uploadOrMergeListingsServiceResult.IsStatusOk())
                 {

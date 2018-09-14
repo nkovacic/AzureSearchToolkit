@@ -533,25 +533,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
         private string GetIndexName(string index)
         {
-            var environment = _configuration.GetModel().Environment;
-
-            if (string.IsNullOrWhiteSpace(environment))
-            {
-                environment = "local";
-            }
-            else if (_configuration.GetModel().IsStagingEnvironment())
-            {
-                environment = "production";
-            }
-
-            if (index.StartsWith($"{environment.ToLowerInvariant().First()}-"))
-            {
-                return index;
-            }
-            else
-            {
-                return $"{environment.ToLowerInvariant().First()}-{index.ToLowerInvariant()}";
-            }
+            return index;
         }
 
         public void Dispose()
