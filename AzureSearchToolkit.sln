@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.28010.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureSearchToolkit", "AzureSearchToolkit\AzureSearchToolkit.csproj", "{89E94627-F4E1-44C6-BE25-931AE53CC6AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureSearchToolkit.Tests", "AzureSearchToolkit.Tests\AzureSearchToolkit.Tests.csproj", "{74EF32F5-4D75-47D9-A36D-37FA403F513F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureSearchToolkit.Test", "AzureSearchToolkit.Test\AzureSearchToolkit.Test.csproj", "{74EF32F5-4D75-47D9-A36D-37FA403F513F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
-namespace AzureSearchToolkit.Tests
+namespace AzureSearchToolkit.Test
 {
     public class AzureSearchConnectionTests
     {
