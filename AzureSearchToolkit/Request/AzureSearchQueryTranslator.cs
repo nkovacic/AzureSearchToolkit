@@ -1,6 +1,7 @@
 ﻿using AzureSearchToolkit.Mapping;
 using AzureSearchToolkit.Request.Criteria;
 using AzureSearchToolkit.Request.Expressions;
+using AzureSearchToolkit.Response.Materializers;
 using AzureSearchToolkit.Utilities;
 using Microsoft.Azure.Search.Models;
 using System;
@@ -17,13 +18,19 @@ namespace AzureSearchToolkit.Request.Visitors
 
         Type finalItemType;
         Func<object, object> itemProjector;
+        IAzureSearchMaterializer materializer;
 
         AzureSearchQueryTranslator(IAzureSearchMapping mapping, Type sourceType)
             : base(mapping, sourceType)
         {
         }
 
-        AzureSearchRequest Translate(Expression e)
+        internal static AzureSearchTranslateResult Translate(IAzureSearchMapping mapping, Expression e)
+        {
+            return new AzureSearchQueryTranslator(mapping, FindSourceType(e)).Translate(e);
+        }
+
+        AzureSearchTranslateResult Translate(Expression e)
         {           
             var evaluated = PartialEvaluator.Evaluate(e);
 
@@ -34,7 +41,19 @@ namespace AzureSearchToolkit.Request.Visitors
 
             return new ElasticTranslateResult(searchRequest, materializer);*/
 
-            return searchRequest;
+            return new AzureSearchTranslateResult(searchRequest, materializer);
+        }
+
+        static Type FindSourceType(Expression e)
+        {
+            var sourceQuery = QuerySourceExpressionVisitor.FindSource(e);
+
+            if (sourceQuery == null)
+            {
+                throw new NotSupportedException("Unable to identify an IQueryable source for this query.");
+            }
+                
+            return sourceQuery.ElementType;
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)

@@ -24,6 +24,6 @@ namespace AzureSearchToolkit.Async
         /// <param name="expression">An expression tree that represents a LINQ query.</param>
         /// <param name="cancellationToken">The optional token to monitor for cancellation requests.</param>
         /// <returns>The task that returns the value that results from executing the specified query.</returns>
-        Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default(CancellationToken));
+        Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default(CancellationToken)) where TResult: class;
     }
 }

@@ -8,12 +8,14 @@ namespace AzureSearchToolkit.Request
 {
     class AzureSearchRequest
     {
+        public string SearchText { get; set; }
         public ICriteria Criteria { get; set; }
         public SearchParameters SearchParameters { get; }
-
+        
         public AzureSearchRequest()
         {
             SearchParameters = new SearchParameters();
+            SearchText = "*";
         }
 
         public void AddRangeToSelect(IEnumerable<string> fields)

@@ -1,6 +1,7 @@
 ﻿using AzureSearchToolkit.Async;
 using AzureSearchToolkit.Logging;
 using AzureSearchToolkit.Mapping;
+using AzureSearchToolkit.Request.Visitors;
 using AzureSearchToolkit.Utilities;
 using System;
 using System.Collections.Generic;
@@ -73,24 +74,46 @@ namespace AzureSearchToolkit
             }
         }
 
-        public object Execute(Expression expression)
-        {
-            return AsyncHelper.RunSync(() => ExecuteAsync(expression));
-        }
-
+        /// <inheritdoc/>
         public TResult Execute<TResult>(Expression expression)
         {
             return (TResult)Execute(expression);
         }
 
-        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc/>
+        public object Execute(Expression expression)
+        {
+            return AsyncHelper.RunSync(() => ExecuteAsync<object>(expression));
+        }
+
+        /// <inheritdoc/>
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default(CancellationToken)) where TResult: class
         {
             return (TResult)await ExecuteAsync(expression, cancellationToken);
         }
 
-        public Task<object> ExecuteAsync(Expression expression, CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc/>
+        public async Task<object> ExecuteAsync(Expression expression, CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotImplementedException();
+            Argument.EnsureNotNull(nameof(expression), expression);
+
+            var translation = AzureSearchQueryTranslator.Translate(Mapping, expression);
+
+            //Logger.Log(TraceEventType.Information, null, null, $"Executing query against document '{translation.SearchParameters.QueryType}'");
+
+            try
+            {
+                var response = await Connection.SearchAsync(translation.SearchRequest.SearchParameters, 
+                    translation.SearchRequest.SearchText, Logger);
+
+                return translation.Materializer.Materialize(response);
+            }
+            catch (Exception e)
+            {
+                ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+
+                return null;
+            }
         }
     }
 }

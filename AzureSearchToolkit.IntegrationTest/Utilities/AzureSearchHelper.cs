@@ -264,6 +264,28 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
             return serviceResult;
         }
 
+        public async Task<ServiceResult<long>> CountDocuments<T>(SearchParameters searchParameters, string searchText = null,
+            string indexName = null) where T : class
+        {
+            var serviceResult = new ServiceResult<long>();
+
+            searchParameters.Top = 0;
+            searchParameters.IncludeTotalResultCount = true;
+
+            var documentSearchServiceResult = await SearchDocuments<T>(searchParameters, searchText, indexName);
+
+            if (documentSearchServiceResult.IsStatusOk())
+            {
+                serviceResult.Data = documentSearchServiceResult.Data.Count.GetValueOrDefault();
+            }
+            else
+            {
+                serviceResult.CopyStatus(documentSearchServiceResult);
+            }
+
+            return serviceResult;
+        }
+
         public SearchParameters GetSearchParameters(ApiParameters apiParameters)
         {
             var searchParameters = new SearchParameters
@@ -335,7 +357,6 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
             return string.Join(" " + delimiter + " ", filters);
         }
-
 
         public string GetEmptyFilter(string property, bool isEqual = true)
         {

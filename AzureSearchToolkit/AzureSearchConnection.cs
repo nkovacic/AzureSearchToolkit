@@ -68,8 +68,8 @@ namespace AzureSearchToolkit
             }
         }
 
-        public async Task<AzureOperationResponse<DocumentSearchResult<T>>> SearchAsync<T>(SearchParameters searchParameters, string searchText = null,
-            ILogger logger = null) where T: class
+        public async Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, string searchText = null,
+            ILogger logger = null)
         {
             if (logger == null)
             {
@@ -84,7 +84,7 @@ namespace AzureSearchToolkit
 
                 try
                 {
-                    var response = await indexClient.Documents.SearchWithHttpMessagesAsync<T>(searchText, searchParameters, customHeaders: headers);
+                    var response = await indexClient.Documents.SearchWithHttpMessagesAsync(searchText, searchParameters, customHeaders: headers);
 
                     if (response.Response.IsSuccessStatusCode)
                     {
@@ -105,7 +105,7 @@ namespace AzureSearchToolkit
                     }
                     else
                     {
-                        logger.Log(TraceEventType.Warning, null, null,  $"Search failed for indexName {Index}. Reason: {response.Response.ReasonPhrase}");
+                        logger.Log(TraceEventType.Warning, null, null, $"Search failed for indexName {Index}. Reason: {response.Response.ReasonPhrase}");
                     }
 
                     return response;
@@ -124,5 +124,18 @@ namespace AzureSearchToolkit
 
             return null;
         }
+        /*
+        public async Task<AzureOperationResponse<DocumentSearchResult<T>>> SearchAsync<T>(SearchParameters searchParameters, string searchText = null,
+            ILogger logger = null) where T: class
+        {
+            var searchResult = await SearchAsync(searchParameters, searchText, logger);
+
+            if (searchResult != null)
+            {
+                var document = searchResult.Body.
+            }
+
+            return null;
+        }*/
     }
 }

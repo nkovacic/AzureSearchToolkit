@@ -4,6 +4,7 @@ using AzureSearchToolkit.IntegrationTest.Utilities;
 using AzureSearchToolkit.Logging;
 using AzureSearchToolkit.Mapping;
 using AzureSearchToolkit.Request;
+using Microsoft.Azure.Search.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,8 @@ namespace AzureSearchToolkit.IntegrationTest
 {
     class Data
     {
-        const string Index = "integration-test";
+        const int ExpectedDataCount = 100;
+        const string Index = "integration-test";      
 
         static readonly AzureSearchConnection azureSearchConnection;
         static readonly AzureSearchContext azureSearchContext;
@@ -45,22 +47,15 @@ namespace AzureSearchToolkit.IntegrationTest
             memory.Clear();
             memory.AddRange(azureSearchContext.Query<Listing>());
 
-            const int expectedDataCount = 100;
-
-            if (memory.Count != expectedDataCount)
+            if (memory.Count != ExpectedDataCount)
             {
                 throw new InvalidOperationException(
-                    $"Tests expect {expectedDataCount} entries but {memory.Count} loaded from AzureSearch index '{Index}'");
+                    $"Tests expect {ExpectedDataCount} entries but {memory.Count} loaded from AzureSearch index '{Index}'");
             }              
         }
 
         public void LoadFromJsonToAzureSearch()
         {
-            var baseDirectory = AppContext.BaseDirectory;
-            var mockedDataPath = Path.Combine(baseDirectory, "App_Data\\listings-mocked.json");
-
-            var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath));
-
             using (var azureSearchHelper = new AzureSearchHelper(LamaConfiguration.Current(), NullLogger.Instance))
             {
                 var createIndexServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.CreateSearchIndex<Listing>(Index));
@@ -70,11 +65,21 @@ namespace AzureSearchToolkit.IntegrationTest
                     throw createIndexServiceResult.PotentialException.GetException();
                 }
 
-                var uploadOrMergeListingsServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.ChangeDocumentsInIndex(listings, Index));
+                var countServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.CountDocuments<Listing>(new SearchParameters(), indexName: Index));
 
-                if (!uploadOrMergeListingsServiceResult.IsStatusOk())
+                if (!countServiceResult.IsStatusOk() || countServiceResult.Data != ExpectedDataCount)
                 {
-                    throw uploadOrMergeListingsServiceResult.PotentialException.GetException();
+                    var baseDirectory = AppContext.BaseDirectory;
+                    var mockedDataPath = Path.Combine(baseDirectory, "App_Data\\listings-mocked.json");
+
+                    var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath));
+
+                    var uploadOrMergeListingsServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.ChangeDocumentsInIndex(listings, Index));
+
+                    if (!uploadOrMergeListingsServiceResult.IsStatusOk())
+                    {
+                        throw uploadOrMergeListingsServiceResult.PotentialException.GetException();
+                    }
                 }
             }
         }

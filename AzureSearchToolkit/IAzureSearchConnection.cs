@@ -28,7 +28,7 @@ namespace AzureSearchToolkit
         /// <param name="searchText">The search text applied to the request.</param>
         /// <param name="logger">The logging mechanism for diagnostic information.</param>
         /// <returns>An AzureOperationResponse object containing the desired search results.</returns>
-        Task<AzureOperationResponse<DocumentSearchResult<T>>> SearchAsync<T>(SearchParameters searchParameters, string searchText = null,
-            ILogger logger = null) where T: class;
+        Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, string searchText = null,
+            ILogger logger = null);
     }
 }
