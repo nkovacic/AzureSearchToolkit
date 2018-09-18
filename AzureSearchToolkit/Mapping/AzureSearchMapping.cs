@@ -4,6 +4,7 @@ using Microsoft.Azure.Search.Models;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -16,7 +17,7 @@ namespace AzureSearchToolkit.Mapping
     /// </summary>
     public class AzureSearchMapping : IAzureSearchMapping
     {
-        private static Dictionary<Type, Dictionary<string, string>> mappedProperties = new Dictionary<Type, Dictionary<string, string>>();
+        private static Dictionary<Type, Dictionary<string, string>> mappedPropertiesCache = new Dictionary<Type, Dictionary<string, string>>();
 
         public JToken FormatValue(MemberInfo member, object value)
         {
@@ -40,12 +41,12 @@ namespace AzureSearchToolkit.Mapping
         }
 
         /// <summary>
-        /// Get the Elasticsearch field name for a given member.
+        /// Get the AzureSearch field name for a given member.
         /// </summary>
         /// <param name="type">The prefix to put in front of this field name, if the field is
         /// an ongoing part of the document search.</param>
         /// <param name="memberInfo">The member whose field name is required.</param>
-        /// <returns>The Elasticsearch field name that matches the member.</returns>
+        /// <returns>The AzureSearch field name that matches the member.</returns>
         public virtual string GetFieldName(Type type, MemberInfo memberInfo)
         {
             Argument.EnsureNotNull(nameof(type), type);
@@ -53,30 +54,18 @@ namespace AzureSearchToolkit.Mapping
 
             var propertyName = memberInfo.Name;
 
-            if (!mappedProperties.ContainsKey(type))
+            var mappedProperties = GetMappedPropertiesForType(type);
+
+            var mappedProperty = mappedProperties.FirstOrDefault(q => q.Value == propertyName);
+
+            if (!string.IsNullOrWhiteSpace(mappedProperty.Value))
             {
-                mappedProperties.Add(type, new Dictionary<string, string>());
-            }
-
-            if (mappedProperties[type].ContainsKey(propertyName))
-            {
-                return mappedProperties[type][propertyName];
-            }
-
-            var camelCasePropertyAttribute = type.GetCustomAttribute<SerializePropertyNamesAsCamelCaseAttribute>(inherit: true);
-
-            if (camelCasePropertyAttribute != null)
-            {
-                var camelCasePropertyName = MappingHelper.ToCamelCase(propertyName);
-
-                mappedProperties[type].Add(propertyName, camelCasePropertyName);
+                return mappedProperty.Key;
             }
             else
             {
-                mappedProperties[type].Add(propertyName, propertyName);
+                throw new KeyNotFoundException($"Property {propertyName} was not found on {type}.");
             }
-
-            return mappedProperties[type][propertyName];
         }
 
         /// <inheritdoc/>
@@ -85,6 +74,57 @@ namespace AzureSearchToolkit.Mapping
             Argument.EnsureNotNull(nameof(type), type);
 
             return null;
+        }
+
+        public object Materialize(Document sourceDocument, Type sourceType)
+        {
+            //var materializedObject = Activator.CreateInstance(sourceType);
+            //var mappedProperties = GetMappedPropertiesForType(sourceType);
+
+            //foreach (var key in sourceDocument.Keys)
+            //{
+            //    if (mappedProperties.ContainsKey(key))
+            //    {
+            //        var foundProperty = sourceType.GetProperty(mappedProperties[key]);
+
+            //        if (foundProperty != null)
+            //        {
+            //            var safeType = Nullable.GetUnderlyingType(foundProperty.PropertyType) ?? foundProperty.PropertyType;
+            //            var safeValue = Convert.ChangeType(sourceDocument[key], safeType);
+
+            //            foundProperty.SetValue(materializedObject, safeValue, null);
+            //        }
+            //    }
+            //}
+
+            //return materializedObject;
+            return JObject.FromObject(sourceDocument).ToObject(sourceType);
+        }
+
+        private Dictionary<string, string> GetMappedPropertiesForType(Type sourceType)
+        {
+            if (!mappedPropertiesCache.ContainsKey(sourceType))
+            {
+                mappedPropertiesCache.Add(sourceType, new Dictionary<string, string>());
+
+                var camelCasePropertyAttribute = sourceType.GetCustomAttribute<SerializePropertyNamesAsCamelCaseAttribute>(inherit: true);
+
+                foreach (var property in sourceType.GetProperties())
+                {
+                    if (camelCasePropertyAttribute != null)
+                    {
+                        var camelCasePropertyName = MappingHelper.ToCamelCase(property.Name);
+
+                        mappedPropertiesCache[sourceType].Add(camelCasePropertyName, property.Name);
+                    }
+                    else
+                    {
+                        mappedPropertiesCache[sourceType].Add(property.Name, property.Name);
+                    }
+                }
+            }
+
+            return mappedPropertiesCache[sourceType];
         }
     }
 }

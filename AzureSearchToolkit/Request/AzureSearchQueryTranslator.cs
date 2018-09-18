@@ -20,9 +20,26 @@ namespace AzureSearchToolkit.Request.Visitors
         Func<object, object> itemProjector;
         IAzureSearchMaterializer materializer;
 
+        Func<Document, object> DefaultItemProjector
+        {
+            get { return document => Mapping.Materialize(document, SourceType); }
+        }
+
         AzureSearchQueryTranslator(IAzureSearchMapping mapping, Type sourceType)
             : base(mapping, sourceType)
         {
+        }
+
+        static Type FindSourceType(Expression e)
+        {
+            var sourceQuery = QuerySourceExpressionVisitor.FindSource(e);
+
+            if (sourceQuery == null)
+            {
+                throw new NotSupportedException("Unable to identify an IQueryable source for this query.");
+            }
+
+            return sourceQuery.ElementType;
         }
 
         internal static AzureSearchTranslateResult Translate(IAzureSearchMapping mapping, Expression e)
@@ -34,26 +51,35 @@ namespace AzureSearchToolkit.Request.Visitors
         {           
             var evaluated = PartialEvaluator.Evaluate(e);
 
-            Visit(evaluated);
-            /*
-            searchRequest.Query = ConstantCriteriaFilterReducer.Reduce(searchRequest.Query);
+            CompleteHitTranslation(evaluated);
+            
+            //searchRequest.Query = ConstantCriteriaFilterReducer.Reduce(searchRequest.Query);
             ApplyTypeSelectionCriteria();
-
-            return new ElasticTranslateResult(searchRequest, materializer);*/
 
             return new AzureSearchTranslateResult(searchRequest, materializer);
         }
 
-        static Type FindSourceType(Expression e)
+        void ApplyTypeSelectionCriteria()
         {
-            var sourceQuery = QuerySourceExpressionVisitor.FindSource(e);
+            var typeCriteria = Mapping.GetTypeSelectionCriteria(SourceType);
 
-            if (sourceQuery == null)
+            searchRequest.Criteria = searchRequest.Criteria == null || searchRequest.Criteria == ConstantCriteria.True
+                ? typeCriteria
+                : AndCriteria.Combine(typeCriteria, searchRequest.Criteria);
+        }
+
+        void CompleteHitTranslation(Expression evaluated)
+        {
+            Visit(evaluated);
+
+            if (materializer == null)
             {
-                throw new NotSupportedException("Unable to identify an IQueryable source for this query.");
+                materializer = new ListAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType ?? SourceType);
+            }              
+            else if (materializer is ChainMaterializer && ((ChainMaterializer)materializer).Next == null)
+            {
+                ((ChainMaterializer)materializer).Next = new ListAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType ?? SourceType);
             }
-                
-            return sourceQuery.ElementType;
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -185,6 +211,7 @@ namespace AzureSearchToolkit.Request.Visitors
 
         Expression VisitAny(Expression source, Expression predicate)
         {
+            materializer = new AnyAzureSearchMaterializer();
             searchRequest.SearchParameters.Top = 1;
 
             return predicate != null
@@ -195,6 +222,8 @@ namespace AzureSearchToolkit.Request.Visitors
 
         Expression VisitCount(Expression source, Expression predicate, Type returnType)
         {
+            materializer = new CountAzureSearchMaterializer(returnType);
+            searchRequest.SearchParameters.IncludeTotalResultCount = true;
             searchRequest.SearchParameters.Top = 0;
 
             return predicate != null
@@ -208,6 +237,8 @@ namespace AzureSearchToolkit.Request.Visitors
             var orDefault = methodName.EndsWith("OrDefault", StringComparison.Ordinal);
 
             searchRequest.SearchParameters.Top = single ? 2 : 1;
+            finalItemType = source.Type;
+            materializer = new OneAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType, single, orDefault);
 
             return predicate != null
                 ? VisitWhere(source, predicate)

@@ -1,4 +1,5 @@
 ﻿using AzureSearchToolkit.Request.Criteria;
+using Microsoft.Azure.Search.Models;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq.Expressions;
@@ -40,5 +41,13 @@ namespace AzureSearchToolkit.Mapping
         /// <param name="type">The CLR type that's being searched.</param>
         /// <returns>The criteria for selecting documents of this type.</returns>
         ICriteria GetTypeSelectionCriteria(Type type);
+
+        /// <summary>
+        /// Materialize the JObject document object from AzureSearch to a CLR object.
+        /// </summary>
+        /// <param name="sourceDocument">Source document.</param>
+        /// <param name="sourceType">Type of CLR object to materialize to.</param>
+        /// <returns>Freshly materialized CLR object version of the source document.</returns>
+        object Materialize(Document sourceDocument, Type sourceType);
     }
 }

@@ -14,7 +14,11 @@ namespace AzureSearchToolkit.Request
         
         public AzureSearchRequest()
         {
-            SearchParameters = new SearchParameters();
+            SearchParameters = new SearchParameters
+            {
+                QueryType = QueryType.Simple,
+                Top = 200
+            };
             SearchText = "*";
         }
 
