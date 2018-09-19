@@ -124,7 +124,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 case "Contains":  // Where(x => x.StringProperty.Contains(value))
                     if (m.Arguments.Count == 1)
                     {
-                        return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "*{0}*", m.Method.Name);
+                        return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "/.*{0}.*/", m.Method.Name);
                     }
                         
                     break;
@@ -140,7 +140,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 case "EndsWith": // Where(x => x.StringProperty.EndsWith(value))
                     if (m.Arguments.Count == 1)
                     {
-                        return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "*{0}", m.Method.Name);
+                        return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "/.*{0}/", m.Method.Name);
                     }
                        
                     break;

@@ -290,14 +290,12 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 var fieldName = Mapping.GetFieldName(SourceType, final);
 
-                var sortFieldType = final.Type.IsGenericOf(typeof(Nullable<>))
-                    ? final.Type.GetGenericArguments()[0]
-                    : final.Type;
-                /*
-                var sortOption = new SortOption(fieldName, ascending,
-                    final.Type.IsNullable() ? Mapping.GetElasticFieldType(sortFieldType) : null);
+                if (!string.IsNullOrWhiteSpace(fieldName))
+                {
+                    fieldName += ascending ? "" : " desc";
 
-                searchRequest.SortOptions.Insert(0, sortOption);*/
+                    searchRequest.AddOrderByFields(fieldName);
+                }
             }
 
             return Visit(source);

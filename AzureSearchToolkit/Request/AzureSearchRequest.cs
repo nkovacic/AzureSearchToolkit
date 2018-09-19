@@ -22,7 +22,20 @@ namespace AzureSearchToolkit.Request
             SearchText = "*";
         }
 
-        public void AddRangeToSelect(IEnumerable<string> fields)
+        public void AddOrderByFields(params string[] orderByFields)
+        {
+            if (SearchParameters.OrderBy == null)
+            {
+                SearchParameters.OrderBy = new List<string>();
+            }
+
+            foreach (var field in orderByFields)
+            {
+                SearchParameters.OrderBy.Add(field);
+            }
+        }
+
+        public void AddRangeToSelect(params string[] fields)
         {
             if (SearchParameters.Select == null)
             {
@@ -32,6 +45,19 @@ namespace AzureSearchToolkit.Request
             foreach (var field in fields)
             {
                 SearchParameters.Select.Add(field);
+            }
+        }
+
+        public void AddRangeToSearchFields(params string[] searchFields)
+        {
+            if (SearchParameters.Select == null)
+            {
+                SearchParameters.SearchFields = new List<string>();
+            }
+
+            foreach (var field in searchFields)
+            {
+                SearchParameters.SearchFields.Add(field);
             }
         }
     }

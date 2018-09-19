@@ -55,7 +55,7 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <inheritdoc/>
         public override string ToString()
         {
-            return $"range: {Field}({string.Join(",", Specifications.Select(s => s.ToString()))})";
+            return string.Join(" and ", Specifications.Select(s => $"{Field} {s.ToString()}"));
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 ﻿using AzureSearchToolkit.Async;
 using AzureSearchToolkit.Logging;
 using AzureSearchToolkit.Mapping;
+using AzureSearchToolkit.Request.Formatters;
 using AzureSearchToolkit.Request.Visitors;
 using AzureSearchToolkit.Utilities;
 using System;
@@ -98,12 +99,14 @@ namespace AzureSearchToolkit
             Argument.EnsureNotNull(nameof(expression), expression);
 
             var translation = AzureSearchQueryTranslator.Translate(Mapping, expression);
-
+            
             //Logger.Log(TraceEventType.Information, null, null, $"Executing query against document '{translation.SearchParameters.QueryType}'");
 
             try
             {
-                var response = await Connection.SearchAsync(translation.SearchRequest.SearchParameters, 
+                var formatter = new SearchRequestFormatter(Mapping, translation.SearchRequest);
+
+                var response = await Connection.SearchAsync(formatter.SearchRequest.SearchParameters, 
                     translation.SearchRequest.SearchText, Logger);
 
                 return translation.Materializer.Materialize(response);

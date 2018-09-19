@@ -10,10 +10,23 @@ namespace AzureSearchToolkit.Request.Criteria
         static readonly Dictionary<RangeComparison, string> rangeComparisonValues = new Dictionary<RangeComparison, string>
         {
             { RangeComparison.GreaterThan, "gt" },
-            { RangeComparison.GreaterThanOrEqual, "gte" },
+            { RangeComparison.GreaterThanOrEqual, "ge" },
             { RangeComparison.LessThan, "lt" },
-            { RangeComparison.LessThanOrEqual, "lte" },
+            { RangeComparison.LessThanOrEqual, "le" },
         };
+
+        /// <summary>
+        /// Type of comparison for this range specification.
+        /// </summary>
+        public RangeComparison Comparison { get; }
+
+        /// <inheritdoc/>
+        public string Name => rangeComparisonValues[Comparison];
+
+        /// <summary>
+        /// Constant value that this range specification tests against.
+        /// </summary>
+        public object Value { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RangeSpecificationCriteria"/> class.
@@ -29,23 +42,10 @@ namespace AzureSearchToolkit.Request.Criteria
             Value = value;
         }
 
-        /// <summary>
-        /// Type of comparison for this range specification.
-        /// </summary>
-        public RangeComparison Comparison { get; }
-
-        /// <inheritdoc/>
-        public string Name => rangeComparisonValues[Comparison];
-
-        /// <summary>
-        /// Constant value that this range specification tests against.
-        /// </summary>
-        public object Value { get; }
-
         /// <inheritdoc/>
         public override string ToString()
         {
-            return $"{Comparison} {Value}";
+            return $"{Name} {ValueHelper.ConvertToSearchSafeValue(Value)}";
         }
     }
 }

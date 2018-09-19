@@ -61,6 +61,9 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         {
             var midPoint = MemoryListings.OrderBy(o => o.CreatedAt).Skip(MemoryListings.Count / 2).First().CreatedAt;
 
+            var firstResult = data.AzureSearch<Listing>().Where(j => j.CreatedAt > midPoint).ToList();
+            var secondResult = data.Memory<Listing>().Where(j => j.CreatedAt > midPoint).ToList();
+
             Assert.Equal(
                 data.AzureSearch<Listing>().Where(j => j.CreatedAt > midPoint).Count(),
                 data.Memory<Listing>().Where(j => j.CreatedAt > midPoint).Count());
