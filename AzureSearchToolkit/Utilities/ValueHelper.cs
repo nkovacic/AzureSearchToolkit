@@ -42,11 +42,13 @@ namespace AzureSearchToolkit.Utilities
                 }
                 else if (value is DateTime)
                 {
-                    valueText = ((DateTime)value).ToUniversalTime().ToString("o"); //.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    //valueText = ((DateTime)value).ToUniversalTime().ToString("o");
+                    valueText = ((DateTime)value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
                 }
                 else if (value is DateTimeOffset)
                 {
-                    valueText = ((DateTimeOffset)value).ToUniversalTime().ToString("o"); //.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    //valueText = ((DateTimeOffset)value).ToUniversalTime().ToString("o"); //.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    valueText = ((DateTimeOffset)value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
                 }
             }
 

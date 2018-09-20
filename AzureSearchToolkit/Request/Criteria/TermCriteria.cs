@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using AzureSearchToolkit.Utilities;
+using System.Collections.ObjectModel;
 using System.Reflection;
 
 namespace AzureSearchToolkit.Request.Criteria
@@ -48,7 +49,7 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <inheritdoc/>
         public override string ToString()
         {
-            return $"term {Field} {Value}";
+            return $"{Field} eq {ValueHelper.ConvertToSearchSafeValue(Value)}";
         }
     }
 }

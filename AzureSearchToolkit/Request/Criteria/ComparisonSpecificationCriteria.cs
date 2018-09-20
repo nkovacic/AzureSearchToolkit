@@ -5,20 +5,32 @@ using System.Diagnostics;
 namespace AzureSearchToolkit.Request.Criteria
 {
     [DebuggerDisplay("{Name,nq} {Value}")]
-    class RangeSpecificationCriteria : ICriteria
+    class ComparisonSpecificationCriteria : INegatableCriteria, ICriteria
     {
-        static readonly Dictionary<RangeComparison, string> rangeComparisonValues = new Dictionary<RangeComparison, string>
+        static readonly Dictionary<Comparison, string> rangeComparisonValues = new Dictionary<Comparison, string>
         {
-            { RangeComparison.GreaterThan, "gt" },
-            { RangeComparison.GreaterThanOrEqual, "ge" },
-            { RangeComparison.LessThan, "lt" },
-            { RangeComparison.LessThanOrEqual, "le" },
+            { Comparison.Equal, "eq" },
+            { Comparison.GreaterThan, "gt" },
+            { Comparison.GreaterThanOrEqual, "ge" },
+            { Comparison.NotEqual, "ne" },
+            { Comparison.LessThan, "lt" },
+            { Comparison.LessThanOrEqual, "le" },
+        };
+
+        static readonly Comparison[] invertedComparison =
+        {
+            Comparison.NotEqual,
+            Comparison.LessThan,
+            Comparison.LessThanOrEqual,
+            Comparison.NotEqual,
+            Comparison.GreaterThan,
+            Comparison.GreaterThanOrEqual
         };
 
         /// <summary>
         /// Type of comparison for this range specification.
         /// </summary>
-        public RangeComparison Comparison { get; }
+        public Comparison Comparison { get; }
 
         /// <inheritdoc/>
         public string Name => rangeComparisonValues[Comparison];
@@ -29,17 +41,23 @@ namespace AzureSearchToolkit.Request.Criteria
         public object Value { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RangeSpecificationCriteria"/> class.
+        /// Initializes a new instance of the <see cref="ComparisonSpecificationCriteria"/> class.
         /// </summary>
         /// <param name="comparison">Type of comparison for this range specification.</param>
         /// <param name="value">Constant value that this range specification tests against.</param>
-        public RangeSpecificationCriteria(RangeComparison comparison, object value)
+        public ComparisonSpecificationCriteria(Comparison comparison, object value)
         {
             Argument.EnsureIsDefinedEnum(nameof(comparison), comparison);
             Argument.EnsureNotNull(nameof(value), value);
 
             Comparison = comparison;
             Value = value;
+        }
+
+        /// <inheritdoc/>
+        public ICriteria Negate()
+        {
+            return new ComparisonSpecificationCriteria(invertedComparison[(int)Comparison], Value);
         }
 
         /// <inheritdoc/>

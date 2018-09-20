@@ -37,9 +37,9 @@ namespace AzureSearchToolkit.Request.Formatters
                 return;
             }
                
-            if (criteria is RangeCriteria)
+            if (criteria is ComparisonCriteria)
             {
-                Build((RangeCriteria)criteria);
+                Build((ComparisonCriteria)criteria);
 
                 return;
             }
@@ -74,13 +74,6 @@ namespace AzureSearchToolkit.Request.Formatters
                 return;
             }
                 
-            if (criteria is NotCriteria)
-            {
-                Build((NotCriteria)criteria);
-
-                return;
-            }
-                
             if (criteria is QueryStringCriteria)
             {
                 Build((QueryStringCriteria)criteria);
@@ -89,13 +82,13 @@ namespace AzureSearchToolkit.Request.Formatters
             }
                 
             // Base class formatters using name property
-
+            /*
             if (criteria is SingleFieldCriteria)
             {
                 Build((SingleFieldCriteria)criteria);
 
                 return;
-            }
+            }*/
                
             if (criteria is CompoundCriteria)
             {
@@ -105,6 +98,16 @@ namespace AzureSearchToolkit.Request.Formatters
             }
                 
             throw new InvalidOperationException($"Unknown criteria type '{criteria.GetType()}'");
+        }
+
+        private void Build(TermCriteria criteria)
+        {
+            SearchRequest.SearchParameters.Filter = criteria.ToString();
+        }
+
+        private void Build(TermsCriteria criteria)
+        {
+            SearchRequest.SearchParameters.Filter = criteria.ToString();
         }
 
         private void Build(QueryStringCriteria criteria)
@@ -118,7 +121,7 @@ namespace AzureSearchToolkit.Request.Formatters
             }
         }
 
-        private void Build(RangeCriteria criteria)
+        private void Build(ComparisonCriteria criteria)
         {
             SearchRequest.SearchParameters.Filter = criteria.ToString();
         }

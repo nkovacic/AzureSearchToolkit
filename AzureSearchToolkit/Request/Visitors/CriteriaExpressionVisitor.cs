@@ -16,14 +16,6 @@ namespace AzureSearchToolkit.Request.Visitors
         protected readonly IAzureSearchMapping Mapping;
         protected readonly Type SourceType;
 
-        static readonly RangeComparison[] invertedRangeComparison =
-        {
-            RangeComparison.LessThan,
-            RangeComparison.LessThanOrEqual,
-            RangeComparison.GreaterThan,
-            RangeComparison.GreaterThanOrEqual
-        };
-
         protected CriteriaExpressionVisitor(IAzureSearchMapping mapping, Type sourceType)
         {
             Mapping = mapping;
@@ -207,16 +199,16 @@ namespace AzureSearchToolkit.Request.Visitors
                     return VisitNotEqual(Visit(node.Left), Visit(node.Right));
 
                 case ExpressionType.GreaterThan:
-                    return VisitRange(RangeComparison.GreaterThan, Visit(node.Left), Visit(node.Right));
+                    return VisitRange(Comparison.GreaterThan, Visit(node.Left), Visit(node.Right));
 
                 case ExpressionType.GreaterThanOrEqual:
-                    return VisitRange(RangeComparison.GreaterThanOrEqual, Visit(node.Left), Visit(node.Right));
+                    return VisitRange(Comparison.GreaterThanOrEqual, Visit(node.Left), Visit(node.Right));
 
                 case ExpressionType.LessThan:
-                    return VisitRange(RangeComparison.LessThan, Visit(node.Left), Visit(node.Right));
+                    return VisitRange(Comparison.LessThan, Visit(node.Left), Visit(node.Right));
 
                 case ExpressionType.LessThanOrEqual:
-                    return VisitRange(RangeComparison.LessThanOrEqual, Visit(node.Left), Visit(node.Right));
+                    return VisitRange(Comparison.LessThanOrEqual, Visit(node.Left), Visit(node.Right));
 
                 default:
                     throw new NotSupportedException($"Binary expression '{node.NodeType}' is not supported");
@@ -381,9 +373,11 @@ namespace AzureSearchToolkit.Request.Visitors
 
             if (cm != null)
             {
+                
                 return cm.IsNullTest
                     ? CreateExists(cm, true)
-                    : new CriteriaExpression(new TermCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), cm.MemberExpression.Member, cm.ConstantExpression.Value));
+                    : new CriteriaExpression(new ComparisonCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), 
+                        cm.MemberExpression.Member, Comparison.Equal, cm.ConstantExpression.Value));
             }
 
             throw new NotSupportedException("Equality must be between a Member and a Constant");
@@ -428,10 +422,11 @@ namespace AzureSearchToolkit.Request.Visitors
 
             return cm.IsNullTest
                 ? CreateExists(cm, false)
-                : new CriteriaExpression(NotCriteria.Create(new TermCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), cm.MemberExpression.Member, cm.ConstantExpression.Value)));
+                : new CriteriaExpression(new ComparisonCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), 
+                        cm.MemberExpression.Member, Comparison.NotEqual, cm.ConstantExpression.Value));
         }
 
-        Expression VisitRange(RangeComparison rangeComparison, Expression left, Expression right)
+        Expression VisitRange(Comparison rangeComparison, Expression left, Expression right)
         {
             var inverted = left is ConstantExpression;
             var cm = ConstantMemberPair.Create(left, right);
@@ -441,13 +436,10 @@ namespace AzureSearchToolkit.Request.Visitors
                 throw new NotSupportedException("A {0} must test a constant against a member");
             }
 
-            if (inverted)
-            {
-                rangeComparison = invertedRangeComparison[(int)rangeComparison];
-            }
-
             var field = Mapping.GetFieldName(SourceType, cm.MemberExpression);
-            return new CriteriaExpression(new RangeCriteria(field, cm.MemberExpression.Member, rangeComparison, cm.ConstantExpression.Value));
+            var comparisonCriteria = new ComparisonCriteria(field, cm.MemberExpression.Member, rangeComparison, cm.ConstantExpression.Value);
+
+            return new CriteriaExpression(inverted ? comparisonCriteria.Negate() : comparisonCriteria);
         }
     }
 }

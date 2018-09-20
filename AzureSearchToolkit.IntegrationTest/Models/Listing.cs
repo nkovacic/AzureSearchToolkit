@@ -3,12 +3,13 @@ using Microsoft.Azure.Search.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text;
 
 namespace AzureSearchToolkit.IntegrationTest.Models
 {
     [SerializePropertyNamesAsCamelCase]
-    class Listing
+    class Listing : IEquatable<Listing>
     {
         [Key]
         [IsFilterable]
@@ -28,5 +29,25 @@ namespace AzureSearchToolkit.IntegrationTest.Models
 
         [IsFilterable]
         public string[] Tags { get; set; }
+
+        public bool Equals(Listing other)
+        {
+            return Equals(Id, other.Id) &&
+                   Equals(CreatedAt, other.CreatedAt) &&
+                   Equals(Price, other.Price) &&
+                   Equals(Title, other.Title) &&
+                   Equals(Active, other.Active) &&
+                   Enumerable.SequenceEqual(Tags, other.Tags);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Listing && Equals((Listing)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
     }
 }

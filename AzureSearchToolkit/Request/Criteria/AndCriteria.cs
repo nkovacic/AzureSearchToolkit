@@ -65,18 +65,18 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <param name="criteria">Collection of <see cref="ICriteria"/> to have ranges combined.</param>
         static void CombineRanges(ICollection<ICriteria> criteria)
         {
-            var candidates = criteria.OfType<RangeCriteria>().GroupBy(r => r.Field).Where(g => g.Count() > 1).ToArray();
+            var candidates = criteria.OfType<ComparisonCriteria>().GroupBy(r => r.Field).Where(g => g.Count() > 1).ToArray();
 
             foreach (var range in candidates)
             {
                 var specifications = range.SelectMany(r => r.Specifications).ToList();
 
-                if (RangeCriteria.SpecificationsCanBeCombined(specifications))
+                if (ComparisonCriteria.SpecificationsCanBeCombined(specifications))
                 {
                     foreach (var rangeCriteria in range)
                         criteria.Remove(rangeCriteria);
 
-                    criteria.Add(new RangeCriteria(range.Key, range.First().Member, specifications));
+                    criteria.Add(new ComparisonCriteria(range.Key, range.First().Member, specifications));
                 }
             }
         }

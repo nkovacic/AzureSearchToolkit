@@ -60,7 +60,7 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <inheritdoc/>
         public override string ToString()
         {
-            return "not " + Criteria;
+            return $"NOT {Criteria}";
         }
     }
 }

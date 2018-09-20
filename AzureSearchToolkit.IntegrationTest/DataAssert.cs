@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Xunit;
@@ -40,14 +41,14 @@ namespace AzureSearchToolkit.IntegrationTest
 
         public static void SameSequence<TTarget>(List<TTarget> expect, List<TTarget> actual)
         {
+            Assert.Equal(expect.Count, actual.Count);
+
             var upperBound = Math.Min(expect.Count, actual.Count);
 
             for (var i = 0; i < upperBound; i++)
             {
                 Assert.Equal(expect[i], actual[i]);
             }
-
-            Assert.Equal(expect.Count, actual.Count);
         }
 
         static IEnumerable<T> Difference<T>(IEnumerable<T> left, IEnumerable<T> right)
