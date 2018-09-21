@@ -7,11 +7,11 @@ using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
 {
-    public class IntWhereTests
+    public class DoubleWhereTests
     {
         static double MiddlePrice;
 
-        static IntWhereTests()
+        static DoubleWhereTests()
         {
             MiddlePrice = DataAssert.Data.Memory<Listing>().Skip(DataAssert.Data.Memory<Listing>().Count() / 2).First().Price;
         }

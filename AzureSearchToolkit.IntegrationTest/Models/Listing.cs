@@ -21,7 +21,7 @@ namespace AzureSearchToolkit.IntegrationTest.Models
         [IsFacetable, IsFilterable, IsSortable]
         public double Price { get; set; }
 
-        [IsSearchable]
+        [IsFilterable, IsSearchable, IsSortable]
         public string Title { get; set; }
 
         [IsFilterable]
@@ -29,6 +29,13 @@ namespace AzureSearchToolkit.IntegrationTest.Models
 
         [IsFilterable]
         public string[] Tags { get; set; }
+
+        public Listing() { }
+
+        public Listing(string id)
+        {
+            Id = id;
+        }
 
         public bool Equals(Listing other)
         {

@@ -74,11 +74,18 @@ namespace AzureSearchToolkit.Request.Criteria
                 if (ComparisonCriteria.SpecificationsCanBeCombined(specifications))
                 {
                     foreach (var rangeCriteria in range)
+                    {
                         criteria.Remove(rangeCriteria);
+                    }
 
                     criteria.Add(new ComparisonCriteria(range.Key, range.First().Member, specifications));
                 }
             }
+        }
+
+        public override string ToString()
+        {
+            return string.Join(" and ", Criteria.Select(f => f.ToString()).ToArray());
         }
     }
 }

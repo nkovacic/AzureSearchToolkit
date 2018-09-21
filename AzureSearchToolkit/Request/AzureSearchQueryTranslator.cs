@@ -146,12 +146,18 @@ namespace AzureSearchToolkit.Request.Visitors
 
                 case "Skip":
                     if (m.Arguments.Count == 2)
+                    {
                         return VisitSkip(m.Arguments[0], m.Arguments[1]);
+                    }
+                        
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "Take":
                     if (m.Arguments.Count == 2)
+                    {
                         return VisitTake(m.Arguments[0], m.Arguments[1]);
+                    }
+                        
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "OrderBy":
@@ -294,7 +300,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 {
                     fieldName += ascending ? "" : " desc";
 
-                    searchRequest.AddOrderByFields(fieldName);
+                    searchRequest.AddOrderByField(fieldName);
                 }
             }
 

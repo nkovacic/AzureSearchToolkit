@@ -2,6 +2,7 @@
 using Microsoft.Azure.Search.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace AzureSearchToolkit.Request
@@ -11,7 +12,7 @@ namespace AzureSearchToolkit.Request
         public string SearchText { get; set; }
         public ICriteria Criteria { get; set; }
         public SearchParameters SearchParameters { get; }
-        
+
         public AzureSearchRequest()
         {
             SearchParameters = new SearchParameters
@@ -23,16 +24,31 @@ namespace AzureSearchToolkit.Request
             SearchText = "*";
         }
 
-        public void AddOrderByFields(params string[] orderByFields)
+        public void AddOrderByField(string orderByField, bool addToStart = true)
+        {
+            AddOrderByFields(new[] { orderByField }, addToStart);
+        }
+
+        public void AddOrderByFields(string[] orderByFields, bool addToStart = true)
         {
             if (SearchParameters.OrderBy == null)
             {
                 SearchParameters.OrderBy = new List<string>();
             }
 
-            foreach (var field in orderByFields)
+            if (addToStart)
             {
-                SearchParameters.OrderBy.Add(field);
+                foreach (var field in orderByFields.Reverse())
+                {
+                    SearchParameters.OrderBy.Insert(0, field);
+                }
+            }
+            else
+            {
+                foreach (var field in orderByFields)
+                {
+                    SearchParameters.OrderBy.Add(field);
+                }
             }
         }
 

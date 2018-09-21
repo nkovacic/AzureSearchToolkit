@@ -37,10 +37,16 @@ namespace AzureSearchToolkit.Request.Criteria
 
             // Strip out null args and handle cases where no combination required
             criteria = criteria.Where(c => c != null).ToArray();
+
             if (criteria.Length == 0)
+            {
                 return null;
+            }
+                
             if (criteria.Length == 1)
+            {
                 return criteria[0];
+            }
 
             // Combines ((a || b) || c) from expression tree into (a || b || c)
             criteria = FlattenOrCriteria(criteria).ToArray();
@@ -62,10 +68,16 @@ namespace AzureSearchToolkit.Request.Criteria
             foreach (var criterion in criteria)
             {
                 if (criterion is OrCriteria)
+                {
                     foreach (var subCriterion in ((OrCriteria)criterion).Criteria)
+                    {
                         yield return subCriterion;
+                    }
+                }                   
                 else
+                {
                     yield return criterion;
+                }    
             }
         }
 
@@ -86,6 +98,12 @@ namespace AzureSearchToolkit.Request.Criteria
             return areAllSameTerm
                 ? TermsCriteria.Build(termCriteria[0].Field, termCriteria[0].Member, termCriteria.SelectMany(f => f.Values).Distinct())
                 : null;
+        }
+
+
+        public override string ToString()
+        {
+            return string.Join(" or ", Criteria.Select(f => f.ToString()).ToArray());
         }
     }
 }

@@ -69,6 +69,11 @@ namespace AzureSearchToolkit.Request.Criteria
                  && specifications.Count(r => r.Comparison == Comparison.LessThan || r.Comparison == Comparison.LessThanOrEqual) < 2;
         }
 
+        internal static bool SpecificationsCanBeReduced(List<ComparisonSpecificationCriteria> specifications)
+        {
+            return specifications.GroupBy(q => q.Comparison).Any(q => q.Count() > 1);
+        }
+
         /// <inheritdoc/>
         public ICriteria Negate()
         {
