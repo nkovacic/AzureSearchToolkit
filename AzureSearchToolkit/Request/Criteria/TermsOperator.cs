@@ -4,9 +4,10 @@ using System.Text;
 
 namespace AzureSearchToolkit.Request.Criteria
 {
-    public enum TermsExecutionMode
+    public enum TermsOperator
     {
-        And,
-        Or
+        All,
+        Any,
+        NotAll
     }
 }

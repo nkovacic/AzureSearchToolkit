@@ -79,7 +79,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 case "ContainsAny":
                     if (m.Arguments.Count == 2)
                     {
-                        return VisitContains("ContainsAny", m.Arguments[0], m.Arguments[1], TermsExecutionMode.Or);
+                        return VisitContains("ContainsAny", m.Arguments[0], m.Arguments[1], TermsOperator.Any);
                     }
                         
                     break;
@@ -87,7 +87,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 case "ContainsAll":
                     if (m.Arguments.Count == 2)
                     {
-                        return VisitContains("ContainsAll", m.Arguments[0], m.Arguments[1], TermsExecutionMode.And);
+                        return VisitContains("ContainsAll", m.Arguments[0], m.Arguments[1], TermsOperator.All);
                     }
                         
                     break;
@@ -327,7 +327,7 @@ namespace AzureSearchToolkit.Request.Visitors
             }
         }
 
-        Expression VisitContains(string methodName, Expression left, Expression right, TermsExecutionMode executionMode)
+        Expression VisitContains(string methodName, Expression left, Expression right, TermsOperator executionMode)
         {
             var cm = ConstantMemberPair.Create(left, right);
 

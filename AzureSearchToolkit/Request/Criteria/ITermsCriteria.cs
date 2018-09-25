@@ -17,7 +17,7 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <summary>
         /// Gets a value that indicates whether this criteria is an "or" style criteria.
         /// </summary>
-        bool IsOrCriteria { get; }
+        bool IsAnyCriteria { get; }
 
         /// <summary>
         /// Gets the member that this criteria is searching.

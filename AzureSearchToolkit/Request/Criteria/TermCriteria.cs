@@ -26,7 +26,7 @@ namespace AzureSearchToolkit.Request.Criteria
         }
 
         // "term" is always implicitly combinable by OrCriteria.Combine
-        bool ITermsCriteria.IsOrCriteria => true;
+        bool ITermsCriteria.IsAnyCriteria => true;
 
         /// <summary>
         /// Property or field being checked for this term.

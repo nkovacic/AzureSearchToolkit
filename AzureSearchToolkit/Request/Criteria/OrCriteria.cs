@@ -93,7 +93,7 @@ namespace AzureSearchToolkit.Request.Criteria
             var termCriteria = criteria.OfType<ITermsCriteria>().ToArray();
             var areAllSameTerm = termCriteria.Length == criteria.Count
                                  && termCriteria.Select(f => f.Field).Distinct().Count() == 1
-                                 && termCriteria.All(f => f.IsOrCriteria);
+                                 && termCriteria.All(f => f.IsAnyCriteria);
 
             return areAllSameTerm
                 ? TermsCriteria.Build(termCriteria[0].Field, termCriteria[0].Member, termCriteria.SelectMany(f => f.Values).Distinct())
