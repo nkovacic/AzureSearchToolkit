@@ -10,6 +10,12 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
     public class ProjectionTests
     {
         [Fact]
+        public void ProjectWithAnonymousType()
+        {
+            DataAssert.Same<Listing, object>(q => q.Select(x => new { x.Id }));
+        }
+
+        [Fact]
         public void ProjectWithObjectInitializerAndNoContructorArgs()
         {
 

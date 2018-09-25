@@ -44,7 +44,8 @@ namespace AzureSearchToolkit.IntegrationTest.Models
                    Equals(Price, other.Price) &&
                    Equals(Title, other.Title) &&
                    Equals(Active, other.Active) &&
-                   Enumerable.SequenceEqual(Tags, other.Tags);
+                   ((Tags == null && other.Tags == null) ||
+                   Enumerable.SequenceEqual(Tags, other.Tags));
         }
 
         public override bool Equals(object obj)

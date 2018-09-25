@@ -17,7 +17,7 @@ namespace AzureSearchToolkit.Request.Visitors
         readonly AzureSearchRequest searchRequest = new AzureSearchRequest();
 
         Type finalItemType;
-        Func<object, object> itemProjector;
+        Func<Document, object> itemProjector;
         IAzureSearchMaterializer materializer;
 
         Func<Document, object> DefaultItemProjector
@@ -319,7 +319,9 @@ namespace AzureSearchToolkit.Request.Visitors
             var lambda = selectExpression.GetLambda();
 
             if (lambda.Parameters.Count != 1)
+            {
                 throw new NotSupportedException("Select method with T parameter is supported, additional parameters like index are not");
+            }
 
             var selectBody = lambda.Body;
 
@@ -328,7 +330,6 @@ namespace AzureSearchToolkit.Request.Visitors
                 RebindPropertiesAndElasticFields(selectBody);
             }
                 
-
             if (selectBody is NewExpression)
             {
                 RebindSelectBody(selectBody, ((NewExpression)selectBody).Arguments, lambda.Parameters);
@@ -371,11 +372,11 @@ namespace AzureSearchToolkit.Request.Visitors
         /// <param name="selectExpression">Select expression to re-bind.</param>
         /// <param name="entityParameter">Parameter that references the whole entity.</param>
         void RebindElasticFieldsAndChainProjector(Expression selectExpression, ParameterExpression entityParameter)
-        {/*
-            var projection = ElasticFieldsExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);
+        {
+            var projection = AzureSearchFieldsExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);
             var compiled = Expression.Lambda(projection.Item1, entityParameter, projection.Item2).Compile();
 
-            itemProjector = h => compiled.DynamicInvoke(DefaultItemProjector(h), h);*/
+            itemProjector = h => compiled.DynamicInvoke(DefaultItemProjector(h), h);
         }
 
         /// <summary>
@@ -384,13 +385,13 @@ namespace AzureSearchToolkit.Request.Visitors
         /// </summary>
         /// <param name="selectExpression">Select expression to re-bind.</param>
         void RebindPropertiesAndElasticFields(Expression selectExpression)
-        {/*
-            var projection = MemberProjectionExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);
+        {
+            var projection = MemberProjectionExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);          
             var compiled = Expression.Lambda(projection.Expression, projection.Parameter).Compile();
-
+            
             itemProjector = h => compiled.DynamicInvoke(h);
 
-            searchRequest.AddRangeToSelect(projection.Collected);*/
+            searchRequest.AddRangeToSelect(projection.Collected.ToArray());
         }
 
         Expression VisitSkip(Expression source, Expression skipExpression)
