@@ -1,6 +1,7 @@
 ﻿using AzureSearchToolkit.IntegrationTest.Configuration;
 using AzureSearchToolkit.IntegrationTest.Models;
 using AzureSearchToolkit.IntegrationTest.Utilities;
+using AzureSearchToolkit.Json;
 using AzureSearchToolkit.Logging;
 using AzureSearchToolkit.Mapping;
 using AzureSearchToolkit.Request;
@@ -72,7 +73,10 @@ namespace AzureSearchToolkit.IntegrationTest
                     var baseDirectory = AppContext.BaseDirectory;
                     var mockedDataPath = Path.Combine(baseDirectory, "App_Data\\listings-mocked.json");
 
-                    var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath));
+                    var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath), new JsonSerializerSettings
+                    {
+                        Converters = new List<JsonConverter> { new GeographyPointJsonConverter() }
+                    });
 
                     var uploadOrMergeListingsServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.ChangeDocumentsInIndex(listings, Index));
 

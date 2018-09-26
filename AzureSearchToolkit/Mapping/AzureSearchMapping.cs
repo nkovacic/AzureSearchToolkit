@@ -1,6 +1,8 @@
-﻿using AzureSearchToolkit.Request.Criteria;
+﻿using AzureSearchToolkit.Json;
+using AzureSearchToolkit.Request.Criteria;
 using AzureSearchToolkit.Utilities;
 using Microsoft.Azure.Search.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -18,6 +20,13 @@ namespace AzureSearchToolkit.Mapping
     public class AzureSearchMapping : IAzureSearchMapping
     {
         private static Dictionary<Type, Dictionary<string, string>> mappedPropertiesCache = new Dictionary<Type, Dictionary<string, string>>();
+        private static JsonSerializerSettings jsonSettings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter> { new GeographyPointJsonConverter() },
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Formatting = Formatting.None
+        };
+        private static JsonSerializer jsonSerializer = JsonSerializer.Create(jsonSettings);
 
         public JToken FormatValue(MemberInfo member, object value)
         {
@@ -78,27 +87,7 @@ namespace AzureSearchToolkit.Mapping
 
         public object Materialize(Document sourceDocument, Type sourceType)
         {
-            //var materializedObject = Activator.CreateInstance(sourceType);
-            //var mappedProperties = GetMappedPropertiesForType(sourceType);
-
-            //foreach (var key in sourceDocument.Keys)
-            //{
-            //    if (mappedProperties.ContainsKey(key))
-            //    {
-            //        var foundProperty = sourceType.GetProperty(mappedProperties[key]);
-
-            //        if (foundProperty != null)
-            //        {
-            //            var safeType = Nullable.GetUnderlyingType(foundProperty.PropertyType) ?? foundProperty.PropertyType;
-            //            var safeValue = Convert.ChangeType(sourceDocument[key], safeType);
-
-            //            foundProperty.SetValue(materializedObject, safeValue, null);
-            //        }
-            //    }
-            //}
-
-            //return materializedObject;
-            return JObject.FromObject(sourceDocument).ToObject(sourceType);
+            return JObject.FromObject(sourceDocument, jsonSerializer).ToObject(sourceType);
         }
 
         private Dictionary<string, string> GetMappedPropertiesForType(Type sourceType)

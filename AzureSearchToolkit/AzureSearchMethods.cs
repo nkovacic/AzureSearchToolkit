@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Spatial;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -29,6 +30,17 @@ namespace AzureSearchToolkit
         /// <param name="items">A sequence containing all the items to be located.</param>
         /// <returns>true if the source sequence contains all of the items; otherwise, false.</returns>
         public static bool ContainsAll<TSource>(IEnumerable<TSource> source, params TSource[] items)
+        {
+            throw BuildException();
+        }
+
+        /// <summary>
+        /// Used for distance operations on sequence
+        /// </summary>
+        /// <param name="source"> GeographyPoint on source where operations takes place</param>
+        /// <param name="filterPoint">GeographyPoint for calculating distance from source GeographyPoint</param>
+        /// <returns>Distance between <paramref name="source"/> and <paramref name="filterPoint"/> in kilometers</returns>
+        public static double Distance(GeographyPoint source, GeographyPoint filterPoint)
         {
             throw BuildException();
         }

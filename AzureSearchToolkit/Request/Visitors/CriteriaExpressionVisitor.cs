@@ -91,6 +91,13 @@ namespace AzureSearchToolkit.Request.Visitors
                     }
                         
                     break;
+                case "Distance":
+                    if (m.Arguments.Count == 2)
+                    {
+                        return VisitDistance(m.Arguments[0], m.Arguments[1]);
+                    }
+
+                    break;
             }
 
             throw new NotSupportedException($"AzureSearch.{m.Method.Name} method is not supported");
@@ -339,6 +346,18 @@ namespace AzureSearchToolkit.Request.Visitors
             }
 
             throw new NotSupportedException(methodName + " must be between a Member and a Constant");
+        }
+
+        Expression VisitDistance(Expression left, Expression right)
+        {
+            var cm = ConstantMemberPair.Create(left, right);
+
+            if (cm != null)
+            {
+
+            }
+
+            throw new NotSupportedException("Distance must be between a Member and a Constant");
         }
 
         Expression CreateExists(ConstantMemberPair cm, bool positiveTest)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.Search;
 using Microsoft.Azure.Search.Models;
+using Microsoft.Spatial;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -29,6 +30,9 @@ namespace AzureSearchToolkit.IntegrationTest.Models
 
         [IsFilterable]
         public string[] Tags { get; set; }
+
+        [IsFilterable, IsSortable]
+        public GeographyPoint Place { get; set; }
 
         public Listing() { }
 
