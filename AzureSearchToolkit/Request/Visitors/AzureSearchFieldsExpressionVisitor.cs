@@ -38,16 +38,6 @@ namespace AzureSearchToolkit.Request.Visitors
             return Tuple.Create(visitor.Visit(selector), parameter);
         }
 
-        protected override Expression VisitMember(MemberExpression node)
-        {
-            return IsAzureSearchField(node) ? VisitAzureSearchField(node) : base.VisitMember(node);
-        }
-
-        protected bool IsAzureSearchField(MemberExpression node)
-        {
-            return false;
-        }
-
         protected virtual Expression VisitAzureSearchField(MemberExpression m)
         {
             return Expression.Convert(Expression.Property(BindingParameter, "Item", Expression.Constant(m.Member.Name.ToLowerInvariant())), m.Type);

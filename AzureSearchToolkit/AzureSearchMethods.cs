@@ -16,7 +16,7 @@ namespace AzureSearchToolkit
         /// <param name="source">A sequence in which to locate one of the items.</param>
         /// <param name="items">A sequence containing the items to be located.</param>
         /// <returns>true if the source sequence contains any of the items; otherwise, false.</returns>
-        public static bool ContainsAny<TSource>(IEnumerable<TSource> source, IEnumerable<TSource> items)
+        public static bool ContainsAny<TSource>(IEnumerable<TSource> source, params TSource[] items)
         {
             throw BuildException();
         }
@@ -28,7 +28,7 @@ namespace AzureSearchToolkit
         /// <param name="source">A sequence in which to locate all of the items.</param>
         /// <param name="items">A sequence containing all the items to be located.</param>
         /// <returns>true if the source sequence contains all of the items; otherwise, false.</returns>
-        public static bool ContainsAll<TSource>(IEnumerable<TSource> source, IEnumerable<TSource> items)
+        public static bool ContainsAll<TSource>(IEnumerable<TSource> source, params TSource[] items)
         {
             throw BuildException();
         }
@@ -40,7 +40,7 @@ namespace AzureSearchToolkit
         /// <returns>InvalidOperationException with appropriate error message.</returns>
         static InvalidOperationException BuildException([CallerMemberName] string memberName = null)
         {
-            return new InvalidOperationException($"ElasticMethods.{memberName} is a method for mapping queries to Elasticsearch and should not be called directly.");
+            return new InvalidOperationException($"AzureSearchMethods.{memberName} is a method for mapping queries to AzureSearch and should not be called directly.");
         }
     }
 }

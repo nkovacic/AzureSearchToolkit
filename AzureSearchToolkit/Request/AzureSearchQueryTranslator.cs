@@ -52,10 +52,10 @@ namespace AzureSearchToolkit.Request.Visitors
             var evaluated = PartialEvaluator.Evaluate(e);
 
             CompleteHitTranslation(evaluated);
-            
-            //searchRequest.Query = ConstantCriteriaFilterReducer.Reduce(searchRequest.Query);
-            ApplyTypeSelectionCriteria();
+            CheckCriteriaForIllegalState();
 
+            ApplyTypeSelectionCriteria();
+            
             return new AzureSearchTranslateResult(searchRequest, materializer);
         }
 
@@ -79,6 +79,20 @@ namespace AzureSearchToolkit.Request.Visitors
             else if (materializer is ChainMaterializer && ((ChainMaterializer)materializer).Next == null)
             {
                 ((ChainMaterializer)materializer).Next = new ListAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType ?? SourceType);
+            }
+        }
+
+        void CheckCriteriaForIllegalState()
+        {
+            if (searchRequest.Criteria != null)
+            {
+                if (searchRequest.Criteria is TermsCriteria)
+                {
+                    if (((TermsCriteria)searchRequest.Criteria).Operator == TermsOperator.All)
+                    {
+                        throw new NotSupportedException("AzureSearchMethods.ContainsAll must be used with ! prefix.");
+                    }
+                }
             }
         }
 

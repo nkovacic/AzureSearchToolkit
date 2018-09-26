@@ -53,39 +53,41 @@ namespace AzureSearchToolkit.Request.Criteria
             var termOperator = "";
             var notOperator = false;
 
-            switch (Operator)
+            if (Operator == TermsOperator.Any)
             {
-                case TermsOperator.Any:
-                    termOperator = "any";
-                    break;
-                case TermsOperator.NotAll:
-                case TermsOperator.All:
-                    notOperator = true;
-                    termOperator = "all";
-                    break;
-                default:
-                    throw new KeyNotFoundException($"Term operator {Operator} not mapped!");
-            }
+                termOperator = "any";
 
-            if (Operator == TermsOperator.Any && !notOperator && Values.Count > 1)
+                if (Values.Count > 1)
+                {
+                    return $"search.in({Field}, '{string.Join("|", Values)}, '|')";
+                }
+            }
+            else if (Operator == TermsOperator.All || Operator == TermsOperator.NotAll)
             {
-                return $"search.in({Field}, '{string.Join("|", Values)}, '|')";
+                termOperator = "all";
+
+                if (Operator == TermsOperator.NotAll)
+                {
+                    notOperator = true;
+                }
             }
             else
             {
-                var filter = $"{Field}/{termOperator}(t: ";
-
-                if (Values.Count == 1)
-                {
-                    filter += $"t {(notOperator ? "ne " : "eq")} {ValueHelper.ConvertToSearchSafeValue(Values.First())}";
-                }
-                else
-                {
-                    filter += $"{(notOperator ? "not " : "")}search.in(t, '{string.Join(",", Values)}')";
-                }
-
-                return filter + ")";
+                throw new KeyNotFoundException($"Term operator {Operator} not mapped!");
             }
+
+            var filter = $"{Field}/{termOperator}(t: ";
+
+            if (Values.Count == 1)
+            {
+                filter += $"t {(notOperator ? "ne " : "eq")} {ValueHelper.ConvertToSearchSafeValue(Values.First())}";
+            }
+            else
+            {
+                filter += $"{(notOperator ? "not " : "")}search.in(t, '{string.Join(",", Values)}')";
+            }
+
+            return filter + ")";
         }
 
         /// <summary>
