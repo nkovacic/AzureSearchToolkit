@@ -92,6 +92,11 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         throw new NotSupportedException("AzureSearchMethods.ContainsAll must be used with ! prefix.");
                     }
+                    else if (((TermsCriteria)searchRequest.Criteria).Operator == TermsOperator.NotAny 
+                        && ((TermsCriteria)searchRequest.Criteria).Values.Count > 1)
+                    {
+                        throw new NotSupportedException("AzureSearchMethods.ContainsAny cannot be used with ! prefix.");
+                    }
                 }
             }
         }

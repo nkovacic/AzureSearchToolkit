@@ -113,7 +113,7 @@ namespace AzureSearchToolkit
             }
             catch (Exception e)
             {
-                ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(e).Throw();
 
                 return null;
             }

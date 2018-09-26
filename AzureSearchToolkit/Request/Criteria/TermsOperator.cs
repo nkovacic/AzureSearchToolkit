@@ -8,6 +8,7 @@ namespace AzureSearchToolkit.Request.Criteria
     {
         All,
         Any,
+        NotAny,
         NotAll
     }
 }

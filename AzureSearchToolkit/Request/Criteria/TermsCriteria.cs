@@ -15,17 +15,25 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <summary>
         /// Initializes a new instance of the <see cref="TermsCriteria"/> class.
         /// </summary>
-        /// <param name="executionMode">Type of execution mode this terms criteria will take.</param>
+        /// <param name="termsOperator">Type of execution mode this terms criteria will take.</param>
         /// <param name="field">Field to be checked for this term.</param>
         /// <param name="member">Property or field being checked for this term.</param>
         /// <param name="values">Constant values being searched for.</param>
-        TermsCriteria(TermsOperator executionMode, string field, MemberInfo member, IEnumerable<object> values)
+        TermsCriteria(TermsOperator termsOperator, string field, MemberInfo member, IEnumerable<object> values)
             : base(field)
         {
-            Operator = executionMode;
+            Operator = termsOperator;
             Member = member;
             Values = new ReadOnlyCollection<object>(values.ToArray());
         }
+
+        Dictionary<TermsOperator, TermsOperator> invertedOperators = new Dictionary<TermsOperator, TermsOperator>
+        {
+            { TermsOperator.All, TermsOperator.NotAll },
+            { TermsOperator.Any, TermsOperator.NotAll },
+            { TermsOperator.NotAll, TermsOperator.All },
+            { TermsOperator.NotAny, TermsOperator.Any }
+        };
 
         /// <summary>
         /// Type of execution mode this terms criteria will take.
@@ -53,13 +61,18 @@ namespace AzureSearchToolkit.Request.Criteria
             var termOperator = "";
             var notOperator = false;
 
-            if (Operator == TermsOperator.Any)
+            if (Operator == TermsOperator.Any || Operator == TermsOperator.NotAny)
             {
                 termOperator = "any";
 
-                if (Values.Count > 1)
+                if (Operator == TermsOperator.NotAny)
                 {
-                    return $"search.in({Field}, '{string.Join("|", Values)}, '|')";
+                    notOperator = true;
+                }
+
+                if (Values.Count > 1 && !TypeHelper.IsPropertyNonStringEnumerable(TypeHelper.GetReturnType(Member)))
+                {
+                    return $"search.in({Field}, '{string.Join("|", Values)}', '|')";
                 }
             }
             else if (Operator == TermsOperator.All || Operator == TermsOperator.NotAll)
@@ -84,7 +97,7 @@ namespace AzureSearchToolkit.Request.Criteria
             }
             else
             {
-                filter += $"{(notOperator ? "not " : "")}search.in(t, '{string.Join(",", Values)}')";
+                filter += $"{(notOperator ? "not " : "")}search.in(t, '{string.Join("|", Values)}', '|')";
             }
 
             return filter + ")";
@@ -148,7 +161,7 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <inheritdoc/>
         public ICriteria Negate()
         {
-            return new TermsCriteria(TermsOperator.NotAll, Field, Member, Values);
+            return new TermsCriteria(invertedOperators[Operator], Field, Member, Values);
         }
     }
 }

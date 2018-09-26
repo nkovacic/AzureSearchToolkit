@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -19,14 +20,21 @@ namespace AzureSearchToolkit.Utilities
         /// <returns>Return type of that member.</returns>
         public static Type GetReturnType(MemberInfo memberInfo)
         {
-            if (memberInfo is FieldInfo)
-                return ((FieldInfo)memberInfo).FieldType;
+            switch (memberInfo.MemberType)
+            {
+                case MemberTypes.Event:
+                    return ((EventInfo)memberInfo).EventHandlerType;
+                case MemberTypes.Field:
+                    return ((FieldInfo)memberInfo).FieldType;
+                case MemberTypes.Method:
+                    return ((MethodInfo)memberInfo).ReturnType;
+                case MemberTypes.Property:
+                    return ((PropertyInfo)memberInfo).PropertyType;
+                default:
+                    var declaredName = memberInfo.DeclaringType != null ? memberInfo.DeclaringType.FullName : "unknown";
 
-            if (memberInfo is PropertyInfo)
-                return ((PropertyInfo)memberInfo).PropertyType;
-
-            var declaredName = memberInfo.DeclaringType != null ? memberInfo.DeclaringType.FullName : "unknown";
-            throw new NotSupportedException($"Member '{memberInfo.Name}' on type {declaredName} is of unsupported type '{memberInfo.GetType().FullName}'");
+                    throw new NotSupportedException($"Member '{memberInfo.Name}' on type {declaredName} is of unsupported type '{memberInfo.GetType().FullName}'");
+            }
         }
 
         /// <summary>
@@ -71,6 +79,7 @@ namespace AzureSearchToolkit.Utilities
         public static Type GetSequenceElementType(Type sequenceType)
         {
             var elementType = FindIEnumerable(sequenceType);
+
             return elementType == null
                 ? sequenceType
                 : elementType.GenericTypeArguments[0];
@@ -84,11 +93,15 @@ namespace AzureSearchToolkit.Utilities
         public static Type FindIEnumerable(Type sequenceType)
         {
             if (sequenceType == null || sequenceType == typeof(string))
+            {
                 return null;
+            }  
 
             if (sequenceType.IsArray)
+            {
                 return typeof(IEnumerable<>).MakeGenericType(sequenceType.GetElementType());
-
+            }
+                
             var sequenceTypeInfo = sequenceType.GetTypeInfo();
 
             while (true)
@@ -96,19 +109,44 @@ namespace AzureSearchToolkit.Utilities
                 foreach (var argument in sequenceType.GenericTypeArguments)
                 {
                     var candidateIEnumerable = typeof(IEnumerable<>).MakeGenericType(argument);
+
                     if (candidateIEnumerable.IsAssignableFrom(sequenceType))
+                    {
                         return candidateIEnumerable;
+                    } 
                 }
 
                 foreach (var candidateInterface in sequenceTypeInfo.ImplementedInterfaces.Select(FindIEnumerable))
+                {
                     if (candidateInterface != null)
+                    {
                         return candidateInterface;
+                    }
+                } 
 
                 if (sequenceTypeInfo.BaseType == null || sequenceTypeInfo.BaseType == typeof(object))
+                {
                     return null;
+                }
 
                 sequenceTypeInfo = sequenceTypeInfo.BaseType.GetTypeInfo();
             }
+        }
+
+
+        /// <summary>
+        /// Determine if the type is assignable from <paramref name="IEnumerable"/>.
+        /// </summary>
+        /// <param name="type">Type being examined.</param>
+        /// <returns>True if the type is assignable from <paramref name="IEnumerable"/>; false otherwise.</returns>
+        public static bool IsPropertyNonStringEnumerable(Type type)
+        {
+            if (type == null || type == typeof(string))
+            {
+                return false;
+            }
+                
+            return typeof(IEnumerable).IsAssignableFrom(type);
         }
 
         /// <summary>
