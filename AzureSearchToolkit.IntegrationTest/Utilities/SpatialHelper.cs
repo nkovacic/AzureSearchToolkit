@@ -7,39 +7,16 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 {
     class SpatialHelper
     {
-        
-
-        private static double EarthRadiusInMiles = 3959.0;
-        private static double EarthRadiusInNauticalMiles = 3440.0;
-        private static double EarthRadiusInKilometers = 6371.0;
-        private static double EarthRadiusInMeters = 6371000.0;
-
-        /// <summary>
-        /// Gets the radian.
-        /// </summary>
-        /// <param name="d">The double</param>
-        /// <returns></returns>
-        public static double ToRadian(double d)
-        {
-            return d * (Math.PI / 180);
-        }
-
-        /// <summary>
-        /// Diffs the radian.
-        /// </summary>
-        /// <param name="val1">First value</param>
-        /// <param name="val2">Second value</param>
-        /// <returns></returns>
-        public static double DiffRadian(double val1, double val2)
-        {
-            return ToRadian(val2) - ToRadian(val1);
-        }
-
         public static double GetDistance(GeographyPoint originalPoint, GeographyPoint destinationPoint,
-            int decimalPlaces = 1, DistanceUnit distanceUnit = DistanceUnit.Kilometers)
+            DistanceUnit distanceUnit = DistanceUnit.Kilometers)
         {
+            if (originalPoint == null || destinationPoint == null)
+            {
+                return -1;
+            }
+
             return GetDistance(originalPoint.Latitude, originalPoint.Longitude, destinationPoint.Latitude,
-                destinationPoint.Longitude, decimalPlaces, distanceUnit);
+                destinationPoint.Longitude, distanceUnit);
         }
 
         /// <summary>   
@@ -48,38 +25,34 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
         /// <param name="originLongitude">The longitude of the origin location in decimal notation</param>
         /// <param name="destinationLatitude">The latitude of the destination location in decimal notation</param>
         /// <param name="destinationLongitude">The longitude of the destination location in decimal notation</param>
-        /// <param name="decimalPlaces">The number of decimal places to round the return value to</param>
         /// <param name="distanceUnit">The unit of distance</param>
         /// <returns>A <see cref="Double"/> value representing the distance in from the origin to the destination coordinate</returns>
         /// </summary>
-        public static double GetDistance(double originLatitude, double originLongitude, double destinationLatitude,
-            double destinationLongitude, int decimalPlaces = 1,  DistanceUnit distanceUnit = DistanceUnit.Meters)
+        public static double GetDistance(double originalLatitude, double originalLongitude, double destinationLatitude,
+            double destinationLongitude, DistanceUnit distanceUnit = DistanceUnit.Kilometers)
         {
-            var radius = GetRadius(distanceUnit);
+            var rlat1 = Math.PI * originalLatitude / 180;
+            var rlat2 = Math.PI * destinationLatitude / 180;
+            var theta = originalLongitude - destinationLongitude;
+            var rtheta = Math.PI * theta / 180;
+            var dist =
+                Math.Sin(rlat1) * Math.Sin(rlat2) + Math.Cos(rlat1) *
+                Math.Cos(rlat2) * Math.Cos(rtheta);
+            dist = Math.Acos(dist);
+            dist = dist * 180 / Math.PI;
+            dist = dist * 60 * 1.1515;
 
-            return Math.Round(
-                    radius * 2 *
-                    Math.Asin(Math.Min(1,
-                                       Math.Sqrt(
-                                           (Math.Pow(Math.Sin(DiffRadian(originLatitude, destinationLatitude) / 2.0), 2.0) +
-                                            Math.Cos(ToRadian(originLatitude) * Math.Cos(ToRadian(destinationLatitude))) *
-                                            Math.Pow(Math.Sin(DiffRadian(originLongitude, destinationLongitude) / 2.0),
-                                                     2.0))))), decimalPlaces);
-        }
-
-        private static double GetRadius(DistanceUnit distanceUnit)
-        {
             switch (distanceUnit)
             {
-                case DistanceUnit.Kilometers:
-                    return EarthRadiusInKilometers;
-                case DistanceUnit.Meters:
-                    return EarthRadiusInMeters;
-                case DistanceUnit.NauticalMiles:
-                    return EarthRadiusInNauticalMiles;
-                default:
-                    return EarthRadiusInMiles;
+                case DistanceUnit.Kilometers: //Kilometers -> default
+                    return dist * 1.609344;
+                case DistanceUnit.NauticalMiles: //Nautical Miles 
+                    return dist * 0.8684;
+                case DistanceUnit.Miles: //Miles
+                    return dist;
             }
+
+            return dist;
         }
     }
 }

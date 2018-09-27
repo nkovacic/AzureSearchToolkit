@@ -36,10 +36,17 @@ namespace AzureSearchToolkit.Request.Formatters
             {
                 return;
             }
-               
+
             if (criteria is ComparisonCriteria)
             {
-                Build((ComparisonCriteria)criteria);
+                SimpleBuild(criteria);
+
+                return;
+            }
+
+            if (criteria is DistanceCriteria)
+            {
+                SimpleBuild(criteria);
 
                 return;
             }
@@ -62,14 +69,14 @@ namespace AzureSearchToolkit.Request.Formatters
 
             if (criteria is TermCriteria)
             {
-                Build((TermCriteria)criteria);
+                SimpleBuild(criteria);
 
                 return;
             }
                 
             if (criteria is TermsCriteria)
             {
-                Build((TermsCriteria)criteria);
+                SimpleBuild(criteria);
 
                 return;
             }
@@ -154,8 +161,13 @@ namespace AzureSearchToolkit.Request.Formatters
                     return;
                 }
 
-                SearchRequest.SearchParameters.Filter = criteria.ToString();
+                SimpleBuild(criteria);
             }
+        }
+
+        private void SimpleBuild(ICriteria criteria)
+        {
+            SearchRequest.SearchParameters.Filter = criteria.ToString();
         }
     }
 }

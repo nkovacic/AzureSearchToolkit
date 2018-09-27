@@ -7,33 +7,13 @@ namespace AzureSearchToolkit.Request.Criteria
     [DebuggerDisplay("{Name,nq} {Value}")]
     class ComparisonSpecificationCriteria : INegatableCriteria, ICriteria
     {
-        static readonly Dictionary<Comparison, string> rangeComparisonValues = new Dictionary<Comparison, string>
-        {
-            { Comparison.Equal, "eq" },
-            { Comparison.GreaterThan, "gt" },
-            { Comparison.GreaterThanOrEqual, "ge" },
-            { Comparison.NotEqual, "ne" },
-            { Comparison.LessThan, "lt" },
-            { Comparison.LessThanOrEqual, "le" },
-        };
-
-        static readonly Comparison[] invertedComparison =
-        {
-            Comparison.NotEqual,
-            Comparison.LessThan,
-            Comparison.LessThanOrEqual,
-            Comparison.NotEqual,
-            Comparison.GreaterThan,
-            Comparison.GreaterThanOrEqual
-        };
-
         /// <summary>
         /// Type of comparison for this range specification.
         /// </summary>
         public Comparison Comparison { get; }
 
         /// <inheritdoc/>
-        public string Name => rangeComparisonValues[Comparison];
+        public string Name => ComparisonHelper.GetComparisonValue(Comparison);
 
         /// <summary>
         /// Constant value that this range specification tests against.
@@ -57,7 +37,7 @@ namespace AzureSearchToolkit.Request.Criteria
         /// <inheritdoc/>
         public ICriteria Negate()
         {
-            return new ComparisonSpecificationCriteria(invertedComparison[(int)Comparison], Value);
+            return new ComparisonSpecificationCriteria(ComparisonHelper.Invert(Comparison), Value);
         }
 
         /// <inheritdoc/>

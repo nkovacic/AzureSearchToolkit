@@ -3,6 +3,7 @@ using AzureSearchToolkit.Request;
 using AzureSearchToolkit.Request.Criteria;
 using AzureSearchToolkit.Request.Expressions;
 using AzureSearchToolkit.Utilities;
+using Microsoft.Spatial;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -354,7 +355,9 @@ namespace AzureSearchToolkit.Request.Visitors
 
             if (cm != null)
             {
+                var value = ((GeographyPoint)cm.ConstantExpression.Value);
 
+                return new CriteriaExpression(new DistanceCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), cm.MemberExpression.Member, value, null));
             }
 
             throw new NotSupportedException("Distance must be between a Member and a Constant");
@@ -447,18 +450,42 @@ namespace AzureSearchToolkit.Request.Visitors
 
         Expression VisitRange(Comparison rangeComparison, Expression left, Expression right)
         {
-            var inverted = left is ConstantExpression;
-            var cm = ConstantMemberPair.Create(left, right);
+            var existingCriteriaExpression = left as CriteriaExpression;
 
-            if (cm == null)
+            if (existingCriteriaExpression == null)
             {
-                throw new NotSupportedException("A {0} must test a constant against a member");
+                var inverted = left is ConstantExpression;
+
+                var cm = ConstantMemberPair.Create(left, right);
+
+                if (cm == null)
+                {
+                    throw new NotSupportedException("A {0} must test a constant against a member");
+                }
+
+                var field = Mapping.GetFieldName(SourceType, cm.MemberExpression);
+                var comparisonCriteria = new ComparisonCriteria(field, cm.MemberExpression.Member, rangeComparison, cm.ConstantExpression.Value);
+
+                return new CriteriaExpression(inverted ? comparisonCriteria.Negate() : comparisonCriteria);
             }
+            else
+            {
+                var distanceCriteria = existingCriteriaExpression.Criteria as DistanceCriteria;
+                
+                if (distanceCriteria != null)
+                {
+                    var constantExpression = right as ConstantExpression;
 
-            var field = Mapping.GetFieldName(SourceType, cm.MemberExpression);
-            var comparisonCriteria = new ComparisonCriteria(field, cm.MemberExpression.Member, rangeComparison, cm.ConstantExpression.Value);
+                    if (constantExpression == null)
+                    {
+                        throw new NotSupportedException($"A {right} must test a constant against a member");
+                    }
 
-            return new CriteriaExpression(inverted ? comparisonCriteria.Negate() : comparisonCriteria);
+                    distanceCriteria.ReplaceComparison(rangeComparison, constantExpression.Value);
+                }
+
+                return existingCriteriaExpression;
+            }
         }
     }
 }

@@ -30,11 +30,10 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void SpatialFilterByDistance()
         {
             DataAssert.SameSequence(
-                DataAssert.Data.AzureSearch<Listing>().Where(w => AzureSearchMethods.Distance(w.Place, filterPoint) < 10).ToList(),
+                DataAssert.Data.AzureSearch<Listing>().Where(w => AzureSearchMethods.Distance(w.Place, filterPoint) < 10000).ToList(),
                 DataAssert.Data.Memory<Listing>()
-                    .Where(w => SpatialHelper.GetDistance(w.Place, filterPoint, 1, DistanceUnit.Kilometers) < 10).ToList()
+                    .Where(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers) < 10000).ToList()
             );
-            DataAssert.Same<Listing>(q => q.Where(w => AzureSearchMethods.Distance(w.Place, filterPoint) < 10));
         }
     }
 }

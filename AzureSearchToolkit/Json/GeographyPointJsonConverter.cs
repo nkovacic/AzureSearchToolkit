@@ -17,13 +17,30 @@ namespace AzureSearchToolkit.Json
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var jo = JObject.Load(reader);
+            var latitudeProperty = jo.GetValue("latitude");
+            var longitudeProperty = jo.GetValue("longitude");
 
-            return GeographyPoint.Create(jo.GetValue("latitude").ToObject<double>(), jo.GetValue("longitude").ToObject<double>());
+            if (latitudeProperty != null && longitudeProperty != null)
+            {
+                return GeographyPoint.Create(latitudeProperty.ToObject<double>(), longitudeProperty.ToObject<double>());
+            }
+
+            return null;
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            serializer.Serialize(writer, value);
+            var geographyPoint = value as GeographyPoint;
+
+            if (geographyPoint != null)
+            {
+                var geographyPointJson = new JObject();
+
+                geographyPointJson.Add("latitude", geographyPoint.Latitude);
+                geographyPointJson.Add("longitude", geographyPoint.Longitude);
+
+                geographyPointJson.WriteTo(writer);
+            }
         }
     }
 }

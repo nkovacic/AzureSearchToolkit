@@ -87,7 +87,7 @@ namespace AzureSearchToolkit.Mapping
 
         public object Materialize(Document sourceDocument, Type sourceType)
         {
-            return JObject.FromObject(sourceDocument, jsonSerializer).ToObject(sourceType);
+            return JObject.FromObject(sourceDocument, jsonSerializer).ToObject(sourceType, jsonSerializer);
         }
 
         private Dictionary<string, string> GetMappedPropertiesForType(Type sourceType)
