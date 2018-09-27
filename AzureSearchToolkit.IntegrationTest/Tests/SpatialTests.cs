@@ -17,13 +17,21 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         [Fact]
         public void SpatialOrderByDistance()
         {
-            DataAssert.Same<Listing>(q => q.OrderBy(w => AzureSearchMethods.Distance(w.Place, filterPoint)));
+            DataAssert.SameSequence(
+                DataAssert.Data.AzureSearch<Listing>().OrderBy(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
+                DataAssert.Data.Memory<Listing>()
+                    .OrderBy(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers)).Take(10).ToList()
+            );
         }
 
         [Fact]
         public void SpatialOrderByDescendingDistance()
         {
-            DataAssert.Same<Listing>(q => q.OrderByDescending(w => AzureSearchMethods.Distance(w.Place, filterPoint)));
+            DataAssert.SameSequence(
+                DataAssert.Data.AzureSearch<Listing>().OrderByDescending(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
+                DataAssert.Data.Memory<Listing>()
+                    .OrderByDescending(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers)).Take(10).ToList()
+            );
         }
 
         [Fact]
