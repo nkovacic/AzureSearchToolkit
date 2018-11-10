@@ -35,8 +35,10 @@ namespace AzureSearchToolkit
             Argument.EnsureNotNull(nameof(expression), expression);
 
             if (!typeof(IQueryable<T>).IsAssignableFrom(expression.Type))
+            {
                 throw new ArgumentOutOfRangeException(nameof(expression));
-
+            }
+                
             this.provider = provider;
             Expression = expression;
         }

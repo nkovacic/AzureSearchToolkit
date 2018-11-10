@@ -124,6 +124,24 @@ namespace AzureSearchToolkit.Request.Visitors
 
         internal Expression VisitAzureSearchExtensionsMethodCall(MethodCallExpression m)
         {
+            switch(m.Method.Name)
+            {
+                case "LuceneQuery":
+                    if (m.Arguments.Count > 1)
+                    {
+                        return VisitSearchQuery(QueryType.Full, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
+                    }
+
+                    throw GetOverloadUnsupportedException(m.Method);
+                case "SimpleQuery":
+                    if (m.Arguments.Count > 1)
+                    {
+                        return VisitSearchQuery(QueryType.Simple, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
+                    }
+
+                    throw GetOverloadUnsupportedException(m.Method);
+            }
+
             throw new NotSupportedException($"AzureSearch.{m.Method.Name} method is not supported");
         }
 
@@ -388,6 +406,39 @@ namespace AzureSearchToolkit.Request.Visitors
             }
 
             finalItemType = selectBody.Type;
+
+            return Visit(source);
+        }
+
+        Expression VisitSearchQuery(QueryType searchType, Expression source, Expression searchTextExpression, Expression searchModeExpression, Expression searchFieldsExpression)
+        {
+            var searchText = ((ConstantExpression)searchTextExpression).Value as string;         
+
+            Argument.EnsureNotBlank(nameof(searchTextExpression), searchText);
+            Argument.EnsureNotNull(nameof(searchModeExpression), ((ConstantExpression)searchModeExpression).Value);
+
+            var searchMode = (SearchMode)((ConstantExpression)searchModeExpression).Value;
+
+            if (!string.IsNullOrWhiteSpace(searchRequest.SearchText) && !searchRequest.SearchText.Equals("*"))
+            {
+                throw new NotSupportedException("Only one SimpleQuery or LuceneQuery per LINQ expression is supported!");
+            }
+         
+            searchRequest.SearchText = searchText;
+            searchRequest.SearchParameters.SearchMode = searchMode;
+            searchRequest.SearchParameters.QueryType = searchType;
+
+            if (searchFieldsExpression is NewArrayExpression)
+            {
+                var searchFieldArrayExpressions = ((NewArrayExpression)searchFieldsExpression).Expressions;
+
+                if (searchFieldArrayExpressions?.Any() == true)
+                {
+                    searchRequest.SearchParameters.SearchFields = searchFieldArrayExpressions
+                        .Select(q => Mapping.GetFieldName(TypeHelper.GetSequenceElementType(source.Type), q.GetLambda().Body as MemberExpression))
+                        .ToList();
+                }
+            }
 
             return Visit(source);
         }

@@ -27,6 +27,11 @@ namespace AzureSearchToolkit.IntegrationTest
             var expect = query(Data.Memory<TSource>()).ToList();
             var actual = query(Data.AzureSearch<TSource>()).ToList();
 
+            Same(expect, actual, ignoreOrder);
+        }
+
+        public static void Same<TTarget>(IEnumerable<TTarget> expect, IEnumerable<TTarget> actual, bool ignoreOrder = false)
+        {
             if (ignoreOrder)
             {
                 var difference = Difference(expect, actual);
@@ -35,7 +40,7 @@ namespace AzureSearchToolkit.IntegrationTest
             }
             else
             {
-                SameSequence(expect, actual);
+                SameSequence(expect.ToList(), actual.ToList());
             }
         }
 

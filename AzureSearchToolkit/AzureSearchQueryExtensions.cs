@@ -1,6 +1,8 @@
 ﻿using AzureSearchToolkit.Request;
 using AzureSearchToolkit.Utilities;
+using Microsoft.Azure.Search.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -16,6 +18,47 @@ namespace AzureSearchToolkit
     public static class AzureSearchQueryExtensions
     {
         /// <summary>
+        /// Queries Azure Search with Simple Query Parser
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Linq.IQueryable`1"/> that contains elements from the input sequence that satisfy the condition specified by <paramref name="searchText"/>.
+        /// </returns>
+        /// <param name="source">An <see cref="T:System.Linq.IQueryable`1"/> to query.</param>
+        /// <param name="searchText">A query text to test each element for.</param>
+        /// <param name="searchMode">. The <see cref="SearchMode"/> parameter is used to match on any term (default) or all of them, for cases where a term is not explicitly required (+).</param>
+        /// <typeparam name="TSource">The type of the elements of <paramref name="source"/>.</typeparam>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="source"/> or <paramref name="searchText"/> is null.</exception>
+        public static IQueryable<TSource> SimpleQuery<TSource>(this IQueryable<TSource> source, string searchText, SearchMode searchMode = SearchMode.Any,
+            params Expression<Func<TSource, object>>[] searchFields)
+        {
+            Argument.EnsureNotNull(nameof(searchText), searchText);
+
+            return CreateQueryMethodCall(source, simpleQueryMethodInfo, Expression.Constant(searchText), Expression.Constant(searchMode), Expression.NewArrayInit(typeof(Expression<Func<TSource, object>>), searchFields));
+        }
+
+        /// <summary>
+        /// Queries Azure Search with Lucene Query Parser
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Linq.IQueryable`1"/> that contains elements from the input sequence that satisfy the condition specified by <paramref name="searchText"/>.
+        /// </returns>
+        /// <param name="source">An <see cref="T:System.Linq.IQueryable`1"/> to query.</param>
+        /// <param name="searchText">A query text to test each element for.</param>
+        /// <param name="searchMode">. The <see cref="SearchMode"/> parameter is used to match on any term (default) or all of them, for cases where a term is not explicitly required (+).</param>
+        /// <typeparam name="TSource">The type of the elements of <paramref name="source"/>.</typeparam>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="source"/> or <paramref name="searchText"/> is null.</exception>
+        public static IQueryable<TSource> LuceneQuery<TSource>(this IQueryable<TSource> source, string searchText, SearchMode searchMode = SearchMode.Any,
+            params Expression<Func<TSource, object>>[] searchFields)
+        {
+            Argument.EnsureNotNull(nameof(searchText), searchText);
+
+            return CreateQueryMethodCall(source, luceneQueryMethodInfo, Expression.Constant(searchText), Expression.Constant(searchMode), Expression.NewArrayInit(typeof(Expression<Func<TSource, object>>), searchFields));
+        }
+
+        static readonly MethodInfo luceneQueryMethodInfo = typeof(AzureSearchQueryExtensions).GetMethodInfo(m => m.Name == "LuceneQuery" && m.GetParameters().Length >= 1);
+        static readonly MethodInfo simpleQueryMethodInfo = typeof(AzureSearchQueryExtensions).GetMethodInfo(m => m.Name == "SimpleQuery" && m.GetParameters().Length >= 1);
+
+        /// <summary>
         /// Creates an expression to call a generic version of the given method with the source and arguments as parameters..
         /// </summary>
         /// <typeparam name="TSource">Element type of the query derived from the IQueryable source.</typeparam>
@@ -29,6 +72,7 @@ namespace AzureSearchToolkit
             Argument.EnsureNotNull(nameof(method), source);
 
             var callExpression = Expression.Call(null, method.MakeGenericMethod(typeof(TSource)), new[] { source.Expression }.Concat(arguments));
+
             return source.Provider.CreateQuery<TSource>(callExpression);
         }
 
@@ -38,6 +82,7 @@ namespace AzureSearchToolkit
             Argument.EnsureNotNull(nameof(method), source);
 
             var callExpression = Expression.Call(null, method.MakeGenericMethod(typeof(TSource), typeof(TKey)), new[] { source.Expression }.Concat(arguments));
+
             return source.Provider.CreateQuery<TSource>(callExpression);
         }
     }
