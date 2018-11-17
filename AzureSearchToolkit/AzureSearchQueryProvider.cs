@@ -99,8 +99,6 @@ namespace AzureSearchToolkit
             Argument.EnsureNotNull(nameof(expression), expression);
 
             var translation = AzureSearchQueryTranslator.Translate(Mapping, expression);
-            
-            //Logger.Log(TraceEventType.Information, null, null, $"Executing query against document '{translation.SearchParameters.QueryType}'");
 
             try
             {

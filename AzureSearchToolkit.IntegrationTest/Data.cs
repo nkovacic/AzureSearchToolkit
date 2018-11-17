@@ -33,7 +33,12 @@ namespace AzureSearchToolkit.IntegrationTest
             azureSearchContext = new AzureSearchContext(azureSearchConnection, new AzureSearchMapping());
         }
 
-        public IQueryable<T> AzureSearch<T>()
+        public AzureSearchContext SearchContext()
+        {
+            return azureSearchContext;
+        }
+
+        public IQueryable<T> SearchQuery<T>() where T : class
         {
             return azureSearchContext.Query<T>();
         }
@@ -73,6 +78,20 @@ namespace AzureSearchToolkit.IntegrationTest
                     var baseDirectory = AppContext.BaseDirectory;
                     var mockedDataPath = Path.Combine(baseDirectory, "App_Data\\listings-mocked.json");
 
+                    var searchParameters = new SearchParameters()
+                    {
+                        Select = new List<string>() { "id" },
+                        Top = 1000
+                    };
+
+                    if (countServiceResult.Data > 0)
+                    {
+                        var allDocuments = AsyncHelper.RunSync(() => azureSearchHelper.SearchDocuments<Listing>(searchParameters, indexName: Index));
+
+                        AsyncHelper.RunSync(() => azureSearchHelper
+                            .DeleteDocumentsInIndex(allDocuments.Data.Results.Select(q => new Listing { Id = q.Document.Id }), Index));
+                    }
+                    
                     var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath), new JsonSerializerSettings
                     {
                         Converters = new List<JsonConverter> { new GeographyPointJsonConverter() }

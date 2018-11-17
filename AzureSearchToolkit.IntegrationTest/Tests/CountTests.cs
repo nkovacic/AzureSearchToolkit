@@ -19,7 +19,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
         static CountTests()
         {
-            AzureListings = data.AzureSearch<Listing>();
+            AzureListings = data.SearchQuery<Listing>();
 
             data.LoadToMemoryFromAzureSearch();
 
@@ -44,7 +44,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void CountPredicate()
         {
             Assert.Equal(
-                data.AzureSearch<Listing>().Count(j => j.Price > MidPoint),
+                data.SearchQuery<Listing>().Count(j => j.Price > MidPoint),
                 data.Memory<Listing>().Count(j => j.Price > MidPoint));
         }
 
@@ -52,7 +52,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void LongCountPredicate()
         {
             Assert.Equal(
-                data.AzureSearch<Listing>().LongCount(j => j.Price > MidPoint),
+                data.SearchQuery<Listing>().LongCount(j => j.Price > MidPoint),
                 data.Memory<Listing>().LongCount(j => j.Price > MidPoint));
         }
 
@@ -62,7 +62,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             var midPoint = MemoryListings.OrderBy(o => o.CreatedAt).Skip(MemoryListings.Count / 2).First().Price;
 
             Assert.Equal(
-                data.AzureSearch<Listing>().Where(j => j.Price > midPoint).Count(),
+                data.SearchQuery<Listing>().Where(j => j.Price > midPoint).Count(),
                 data.Memory<Listing>().Where(j => j.Price > midPoint).Count());
         }
 
@@ -72,7 +72,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             var midPoint = MemoryListings.OrderBy(o => o.Id).Skip(MemoryListings.Count / 2).First().Price;
 
             Assert.Equal(
-                data.AzureSearch<Listing>().Where(j => j.Price > midPoint).LongCount(),
+                data.SearchQuery<Listing>().Where(j => j.Price > midPoint).LongCount(),
                 data.Memory<Listing>().Where(j => j.Price > midPoint).LongCount());
         }
 
@@ -80,7 +80,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void QueryCount()
         {
             Assert.Equal(
-                data.AzureSearch<Listing>().Where(j => j.Title.Contains("a")).Count(),
+                data.SearchQuery<Listing>().Where(j => j.Title.Contains("a")).Count(),
                 data.Memory<Listing>().Where(j => j.Title.ToLowerInvariant().Contains("a")).Count());
         }
 
@@ -88,7 +88,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void QueryLongCount()
         {
             Assert.Equal(
-                data.AzureSearch<Listing>().Where(j => j.Title.Contains("a")).LongCount(),
+                data.SearchQuery<Listing>().Where(j => j.Title.Contains("a")).LongCount(),
                 data.Memory<Listing>().Where(j => j.Title.ToLowerInvariant().Contains("a")).LongCount());
         }
 
@@ -96,7 +96,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void QueryCountPredicate()
         {
             Assert.Equal(
-                data.AzureSearch<Listing>().Where(j => j.Title.Contains("a")).Count(j => j.Price > MidPoint),
+                data.SearchQuery<Listing>().Where(j => j.Title.Contains("a")).Count(j => j.Price > MidPoint),
                 data.Memory<Listing>().Where(j => j.Title.ToLowerInvariant().Contains("a")).Count(j => j.Price > MidPoint));
         }
 
@@ -104,7 +104,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void QueryLongCountPredicate()
         {
             Assert.Equal(
-                data.AzureSearch<Listing>().Where(j => j.Title.Contains("a")).LongCount(j => j.Price > MidPoint),
+                data.SearchQuery<Listing>().Where(j => j.Title.Contains("a")).LongCount(j => j.Price > MidPoint),
                 data.Memory<Listing>().Where(j => j.Title.ToLowerInvariant().Contains("a")).LongCount(j => j.Price > MidPoint));
         }
     }

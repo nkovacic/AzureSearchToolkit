@@ -44,6 +44,18 @@ namespace AzureSearchToolkit.IntegrationTest.Models
             Id = id;
         }
 
+        public Listing(Listing listing)
+        {
+            Id = listing.Id;
+            CreatedAt = listing.CreatedAt;
+            Description = listing.Description;
+            Price = listing.Price;
+            Title = listing.Title;
+            Active = listing.Active;
+            Tags = new List<string>(listing.Tags).ToArray();
+            Place = listing.Place;
+        }
+
         public bool Equals(Listing other)
         {
             return Equals(Id, other.Id) &&

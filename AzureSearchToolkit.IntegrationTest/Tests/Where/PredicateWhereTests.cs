@@ -10,8 +10,8 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 {
     public class PredicateWhereTests
     {
-        static readonly IQueryable<Listing> searchListings = DataAssert.Data.AzureSearch<Listing>();
-        static readonly IQueryable<Listing> memoryListings = DataAssert.Data.AzureSearch<Listing>();
+        static readonly IQueryable<Listing> searchListings = DataAssert.Data.SearchQuery<Listing>();
+        static readonly IQueryable<Listing> memoryListings = DataAssert.Data.SearchQuery<Listing>();
 
         [Fact]
         public void CanUseSingleWherePredicate()

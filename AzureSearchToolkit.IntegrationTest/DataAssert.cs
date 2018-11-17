@@ -17,15 +17,15 @@ namespace AzureSearchToolkit.IntegrationTest
             Data.LoadToMemoryFromAzureSearch();
         }
 
-        public static void Same<TSource>(Func<IQueryable<TSource>, IQueryable<TSource>> query, bool ignoreOrder = false)
+        public static void Same<TSource>(Func<IQueryable<TSource>, IQueryable<TSource>> query, bool ignoreOrder = false) where TSource : class
         {
             Same<TSource, TSource>(query, ignoreOrder);
         }
 
-        public static void Same<TSource, TTarget>(Func<IQueryable<TSource>, IQueryable<TTarget>> query, bool ignoreOrder = false)
+        public static void Same<TSource, TTarget>(Func<IQueryable<TSource>, IQueryable<TTarget>> query, bool ignoreOrder = false) where TSource : class
         {
             var expect = query(Data.Memory<TSource>()).ToList();
-            var actual = query(Data.AzureSearch<TSource>()).ToList();
+            var actual = query(Data.SearchQuery<TSource>()).ToList();
 
             Same(expect, actual, ignoreOrder);
         }

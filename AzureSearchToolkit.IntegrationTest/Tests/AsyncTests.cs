@@ -21,7 +21,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public async void ToListAsyncReturnsCorrectResults()
         {
             var memory = DataAssert.Data.Memory<Listing>().Where(w => w.Price > MiddlePrice).OrderBy(w => w.Price).ToList();
-            var search = await DataAssert.Data.AzureSearch<Listing>().Where(w => w.Price > MiddlePrice).OrderBy(w => w.Price).ToListAsync();
+            var search = await DataAssert.Data.SearchQuery<Listing>().Where(w => w.Price > MiddlePrice).OrderBy(w => w.Price).ToListAsync();
 
             DataAssert.SameSequence(memory, search);
         }
@@ -44,7 +44,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public async void FirstAsyncReturnsCorrectResult()
         {
             var memory = DataAssert.Data.Memory<Listing>().Where(w => w.Price > MiddlePrice).First();
-            var search = await DataAssert.Data.AzureSearch<Listing>().Where(w => w.Price > MiddlePrice).FirstAsync();
+            var search = await DataAssert.Data.SearchQuery<Listing>().Where(w => w.Price > MiddlePrice).FirstAsync();
 
             Assert.Equal(memory, search);
         }
@@ -53,7 +53,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public async void FirstOrDefaultAsyncWithPredicateReturnsCorrectResult()
         {
             var memory = DataAssert.Data.Memory<Listing>().FirstOrDefault(w => w.Price == MiddlePrice);
-            var search = await DataAssert.Data.AzureSearch<Listing>().FirstOrDefaultAsync(w => w.Price == MiddlePrice);
+            var search = await DataAssert.Data.SearchQuery<Listing>().FirstOrDefaultAsync(w => w.Price == MiddlePrice);
 
             Assert.Equal(memory, search);
         }

@@ -1,4 +1,5 @@
 ﻿using AzureSearchToolkit.Logging;
+using AzureSearchToolkit.Request;
 using AzureSearchToolkit.Utilities;
 using Microsoft.Azure.Search;
 using Microsoft.Azure.Search.Models;
@@ -29,18 +30,14 @@ namespace AzureSearchToolkit
         /// </summary>
         public TimeSpan Timeout { get; }
 
-        public AzureSearchConnection(string searchName, string searchKey, string index = null, TimeSpan? timeout = null)
+        public AzureSearchConnection(string searchName, string searchKey, string index, TimeSpan? timeout = null)
         {
             if (timeout.HasValue)
             {
                 Argument.EnsurePositive(nameof(timeout), timeout.Value);
             }
                 
-            if (index != null)
-            {
-                Argument.EnsureNotBlank(nameof(index), index);
-            }
-
+            Argument.EnsureNotBlank(nameof(index), index);
             Argument.EnsureNotBlank(nameof(searchName), searchName);
             Argument.EnsureNotBlank(nameof(searchKey), searchKey);
 
@@ -50,6 +47,7 @@ namespace AzureSearchToolkit
             Timeout = timeout ?? defaultTimeout;
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             Dispose(true);
@@ -68,6 +66,124 @@ namespace AzureSearchToolkit
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<bool> ChangeDocumentsInIndexAsync<T>(Dictionary<T, IndexActionType> changedDocuments, ILogger logger = null) 
+            where T : class
+        {
+            Argument.EnsureNotEmpty(nameof(changedDocuments), changedDocuments);
+
+            if (logger == null)
+            {
+                logger = NullLogger.Instance;
+            }
+
+            await EnsureSearchIndexAsync<T>(logger);
+
+            var index = Index;
+            var indexActions = new List<IndexAction<T>>();
+
+            foreach (var keyValuePair in changedDocuments)
+            {
+                IndexAction<T> indexAction = null;
+
+                switch (keyValuePair.Value)
+                {
+                    case IndexActionType.Upload:
+                        indexAction = IndexAction.Upload(keyValuePair.Key);
+                        break;
+                    case IndexActionType.Delete:
+                        indexAction = IndexAction.Delete(keyValuePair.Key);
+                        break;
+                    case IndexActionType.Merge:
+                        indexAction = IndexAction.Merge(keyValuePair.Key);
+                        break;
+                    default:
+                        indexAction = IndexAction.MergeOrUpload(keyValuePair.Key);
+                        break;
+                }
+
+                indexActions.Add(indexAction);
+            }
+
+            var batch = IndexBatch.New(indexActions);
+            var indexClient = SearchClient.Value.Indexes.GetClient(index);
+
+            try
+            {
+                var documentIndexResult = await indexClient.Documents.IndexAsync(batch);
+
+                return documentIndexResult.Results != null && documentIndexResult.Results.Count == changedDocuments.Count();
+            }
+            catch (IndexBatchException e)
+            {
+                // Sometimes when your Search service is under load, indexing will fail for some of the documents in
+                // the batch. Depending on your application, you can take compensating actions like delaying and
+                // retrying. For this simple demo, we just log the failed document keys and continue.
+                logger.Log(TraceEventType.Error, e, null , "Failed to index some of the documents: {0}",
+                    string.Join(", ", e.IndexingResults.Where(r => !r.Succeeded).Select(r => r.Key)));
+            }
+            catch (Exception e)
+            {
+                logger.Log(TraceEventType.Error, e, null, "Search index failed");
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> EnsureSearchIndexAsync<T>(ILogger logger = null) where T : class
+        {
+            var index = Index;
+
+            if (logger == null)
+            {
+                logger = NullLogger.Instance;
+            }
+
+            var indexExists = false;
+
+            try
+            {
+                indexExists = await SearchClient.Value.Indexes.ExistsAsync(index);
+            }
+            catch (Exception e)
+            {
+                var message = $"Error on checking if {index} exists!";
+
+                logger.Log(TraceEventType.Error, e, null, message);
+
+                return false;
+            }
+
+            if (indexExists)
+            {
+                return false;
+            }
+
+            var definition = new Index()
+            {
+                Name = index,
+                Fields = FieldBuilder.BuildForType<T>()
+            };
+
+            try
+            {
+                var result = await SearchClient.Value.Indexes.CreateAsync(definition);
+
+                if (result != null)
+                {
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Log(TraceEventType.Error, e, null, $"Index {index} was not created!", null);
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc/>
         public async Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, string searchText = null,
             ILogger logger = null)
         {
@@ -124,18 +240,5 @@ namespace AzureSearchToolkit
 
             return null;
         }
-        /*
-        public async Task<AzureOperationResponse<DocumentSearchResult<T>>> SearchAsync<T>(SearchParameters searchParameters, string searchText = null,
-            ILogger logger = null) where T: class
-        {
-            var searchResult = await SearchAsync(searchParameters, searchText, logger);
-
-            if (searchResult != null)
-            {
-                var document = searchResult.Body.
-            }
-
-            return null;
-        }*/
     }
 }
