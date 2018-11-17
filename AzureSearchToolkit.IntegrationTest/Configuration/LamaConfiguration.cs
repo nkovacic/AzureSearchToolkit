@@ -32,7 +32,8 @@ namespace AzureSearchToolkit.IntegrationTest.Configuration
             if (!string.IsNullOrWhiteSpace(jsonSettingsPath))
             {
                 builder = builder
-                    .AddJsonFile(jsonSettingsPath, optional: true, reloadOnChange: true);
+                    .AddJsonFile(jsonSettingsPath, optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables();
             }
 
             builder = builder.AddEnvironmentVariables();
