@@ -9,6 +9,7 @@ using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
 {
+    [Collection("QueryTestCollection 1")]
     public class SpatialTests
     {
         static readonly GeographyPoint filterPoint = GeographyPoint.Create(-21.18442142, -128.12241032);

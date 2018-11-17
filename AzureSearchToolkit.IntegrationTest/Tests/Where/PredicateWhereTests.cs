@@ -8,6 +8,7 @@ using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
 {
+    [Collection("QueryTestCollection 1")]
     public class PredicateWhereTests
     {
         static readonly IQueryable<Listing> searchListings = DataAssert.Data.SearchQuery<Listing>();

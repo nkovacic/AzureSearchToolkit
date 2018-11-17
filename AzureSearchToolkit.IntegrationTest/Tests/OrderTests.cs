@@ -4,6 +4,7 @@ using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
 {
+    [Collection("QueryTestCollection 1")]
     public class OrderTests
     {
         [Fact]

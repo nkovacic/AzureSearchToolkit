@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
-{ 
+{
+    [Collection("CrudTestCollection 2")]
     public class CrudTests
     {
         [Fact]
@@ -118,7 +119,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         {
             Listing foundListing = null;
 
-            var maxRetryCount = 5;
+            var maxRetryCount = 30;
             var retryCount = 0;
 
             do

@@ -2,7 +2,7 @@
 <package >
     <metadata>
         <id>AzureSearchToolkit</id>
-        <version>1.0.0</version>
+        <version>0.5.0</version>
         <title>AzureSearchToolkit</title>
         <authors>Niko Kovačič</authors>
         <owners>Niko Kovačič</owners>
