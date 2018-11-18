@@ -10,7 +10,7 @@ using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
 {
-    class TestCollections
+    public class TestCollections
     {
         [CollectionDefinition("QueryTestCollection 1")]
         public class QueryTestCollection { }

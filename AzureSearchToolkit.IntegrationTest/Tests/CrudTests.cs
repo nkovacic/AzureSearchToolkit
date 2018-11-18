@@ -51,10 +51,10 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             var createdListing = await GetListingAfterChange(q => q.Id == newListingTemplate.Id);
             var newAllListingsCount = await DataAssert.Data.SearchQuery<Listing>().CountAsync();
 
+            await DataAssert.Data.SearchContext().RemoveAsync(newListingTemplate);
+
             Assert.Equal(newListingTemplate, createdListing);
             Assert.Equal(allListingsCount + 1, newAllListingsCount);
-
-            await DataAssert.Data.SearchContext().RemoveAsync(newListingTemplate);
         }
 
         [Fact]

@@ -20,10 +20,10 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
         static CountTests()
         {
-            AzureListings = data.SearchQuery<Listing>();
-
+            data.LoadFromJsonToAzureSearch();
             data.LoadToMemoryFromAzureSearch();
 
+            AzureListings = data.SearchQuery<Listing>();
             MemoryListings = data.Memory<Listing>().ToList();
 
             MidPoint = MemoryListings.OrderBy(o => o.Id).Skip(MemoryListings.Count / 2).First().Price;
