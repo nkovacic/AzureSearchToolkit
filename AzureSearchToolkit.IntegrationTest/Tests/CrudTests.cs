@@ -33,7 +33,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             Assert.Equal(newListingTemplate, createdListing);
             Assert.Equal(allListingsCount + 1, newAllListingsCount);
 
-            await DataAssert.Data.SearchContext().RemoveAsync(newListingTemplate);
+            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
         [Fact]
@@ -55,6 +55,8 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
             Assert.Equal(newListingTemplate, createdListing);
             Assert.Equal(allListingsCount + 1, newAllListingsCount);
+
+            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
         [Fact]
@@ -70,10 +72,12 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             var removedListing = await GetListingAfterChange(q => q.Id == firstListing.Id, true);
             var newAllListingsCount = await DataAssert.Data.SearchQuery<Listing>().CountAsync();
 
+            await DataAssert.Data.SearchContext().AddAsync(firstListing);
+
             Assert.Null(removedListing);
             Assert.Equal(allListingsCount - 1, newAllListingsCount);
 
-            await DataAssert.Data.SearchContext().AddAsync(firstListing);
+            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
         [Fact]
@@ -90,9 +94,9 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
             var updatedListing = await GetListingAfterChange(q => q.Id == listing.Id);
 
-            Assert.Equal(listing, updatedListing);
-
             await DataAssert.Data.SearchContext().UpdateAsync(originalListing);
+
+            Assert.Equal(listing, updatedListing);
         }
 
 
@@ -110,9 +114,9 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
             var updatedListing = await GetListingAfterChange(q => q.Id == listing.Id);
 
-            Assert.Equal(listing, updatedListing);
-
             await DataAssert.Data.SearchContext().UpdateAsync(originalListing);
+
+            Assert.Equal(listing, updatedListing);
         }
 
         private async Task<Listing> GetListingAfterChange(Expression<Func<Listing, bool>> query, bool shouldReturnNull = false)

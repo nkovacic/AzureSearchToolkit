@@ -538,6 +538,42 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
             return filter;
         }
 
+        public void WaitForSearchOperationCompletion<T>(int numberOfRequiredItemsInSearch, string indexName) where T : class
+        {
+            AsyncHelper.RunSync(() => WaitForSearchOperationCompletionAsync<T>(numberOfRequiredItemsInSearch, indexName));
+        }
+
+        public async Task WaitForSearchOperationCompletionAsync<T>(int numberOfRequiredItemsInSearch, string indexName) where T : class
+        {
+            var numberOfMaxRetries = 20;
+            var numberOfRetries = 0;
+            var numberOfItemsInSearch = -1;
+
+            var searchParemeters = new SearchParameters
+            {
+                Top = 1,
+                IncludeTotalResultCount = true
+            };
+
+            do
+            {
+                var searchResultServiceResult = await SearchDocuments<T>(searchParemeters, indexName: indexName);
+
+                if (searchResultServiceResult.IsStatusOk())
+                {
+                    numberOfItemsInSearch = (int)searchResultServiceResult.Data.Count;
+
+                    if (numberOfItemsInSearch != numberOfRequiredItemsInSearch)
+                    {
+                        await Task.Delay(2000);
+                    }
+                }
+
+                numberOfRetries++;
+            }
+            while (numberOfItemsInSearch != numberOfRequiredItemsInSearch && numberOfRetries < numberOfMaxRetries);
+        }
+
         private string GetIndexName<T>(string indexName = null)
         {
             if (string.IsNullOrWhiteSpace(indexName))

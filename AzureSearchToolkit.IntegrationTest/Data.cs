@@ -90,6 +90,8 @@ namespace AzureSearchToolkit.IntegrationTest
 
                         AsyncHelper.RunSync(() => azureSearchHelper
                             .DeleteDocumentsInIndex(allDocuments.Data.Results.Select(q => new Listing { Id = q.Document.Id }), Index));
+
+                        azureSearchHelper.WaitForSearchOperationCompletion<Listing>(0, Index);
                     }
                     
                     var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath), new JsonSerializerSettings
@@ -103,7 +105,17 @@ namespace AzureSearchToolkit.IntegrationTest
                     {
                         throw uploadOrMergeListingsServiceResult.PotentialException.GetException();
                     }
+
+                    azureSearchHelper.WaitForSearchOperationCompletion<Listing>(listings.Count, Index);
                 }
+            }
+        }
+
+        public void WaitForSearchOperationCompletion(int numberOfRequiredItemsInSearch)
+        {
+            using (var azureSearchHelper = new AzureSearchHelper(LamaConfiguration.Current(), NullLogger.Instance))
+            {
+                azureSearchHelper.WaitForSearchOperationCompletion<Listing>(numberOfRequiredItemsInSearch, Index);
             }
         }
     }
