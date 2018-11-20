@@ -31,10 +31,10 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
             await DataAssert.Data.SearchContext().RemoveAsync(newListingTemplate);
 
+            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
+
             Assert.Equal(newListingTemplate, createdListing);
             Assert.Equal(allListingsCount + 1, newAllListingsCount);
-
-            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
         [Trait("TestCollection", "Crud")]
@@ -55,10 +55,10 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
             await DataAssert.Data.SearchContext().RemoveAsync(newListingTemplate);
 
+            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
+
             Assert.Equal(newListingTemplate, createdListing);
             Assert.Equal(allListingsCount + 1, newAllListingsCount);
-
-            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
         [Trait("TestCollection", "Crud")]
@@ -77,10 +77,10 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
             await DataAssert.Data.SearchContext().AddAsync(firstListing);
 
+            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
+
             Assert.Null(removedListing);
             Assert.Equal(allListingsCount - 1, newAllListingsCount);
-
-            DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
         [Trait("TestCollection", "Crud")]
