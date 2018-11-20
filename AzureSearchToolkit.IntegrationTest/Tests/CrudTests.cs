@@ -13,6 +13,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
     [Collection("CrudTestCollection 2")]
     public class CrudTests
     {
+        [Trait("TestCollection", "Crud")]
         [Fact]
         public async void AddDocument()
         {
@@ -36,6 +37,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
+        [Trait("TestCollection", "Crud")]
         [Fact]
         public async void AddWithAddOrUpdateDocument()
         {
@@ -59,6 +61,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
+        [Trait("TestCollection", "Crud")]
         [Fact]
         public async void RemoveDocument()
         {
@@ -80,6 +83,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             DataAssert.Data.WaitForSearchOperationCompletion(allListingsCount);
         }
 
+        [Trait("TestCollection", "Crud")]
         [Fact]
         public async void UpdateDocument()
         {
@@ -99,7 +103,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             Assert.Equal(listing, updatedListing);
         }
 
-
+        [Trait("TestCollection", "Crud")]
         [Fact]
         public async void UpdateWithAddOrUpdateDocument()
         {
