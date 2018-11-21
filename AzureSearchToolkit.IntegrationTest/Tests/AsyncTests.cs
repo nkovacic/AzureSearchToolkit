@@ -15,14 +15,14 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
 
         static AsyncTests()
         {
-            MiddlePrice = DataAssert.Data.Memory<Listing>().Skip(DataAssert.Data.Memory<Listing>().Count() / 2).First().Price;
+            MiddlePrice = DataAssert.Data.Memory<Listing>().Skip(DataAssert.Data.Memory<Listing>().Count() / 2).First().Price + 1;
         }
 
         [Fact]
         public async void ToListAsyncReturnsCorrectResults()
         {
-            var memory = DataAssert.Data.Memory<Listing>().Where(w => w.Price > MiddlePrice).OrderBy(w => w.CreatedAt).ToList();
-            var search = await DataAssert.Data.SearchQuery<Listing>().Where(w => w.Price > MiddlePrice).OrderBy(w => w.CreatedAt).ToListAsync();
+            var memory = DataAssert.Data.Memory<Listing>().Where(w => w.Price > MiddlePrice).OrderBy(w => w.Price).ToList();
+            var search = await DataAssert.Data.SearchQuery<Listing>().Where(w => w.Price > MiddlePrice).OrderBy(w => w.Price).ToListAsync();
 
             DataAssert.SameSequence(memory, search);
         }
