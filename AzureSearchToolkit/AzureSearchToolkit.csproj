@@ -5,6 +5,15 @@
         <PackageId>AzureSearchToolkit</PackageId>
         <Version>0.5.0</Version>
         <Authors>Niko Kovačič</Authors>
+        <Description>AzureSearchToolkit is a lightweight set of tools for Azure Search to quickly build search functionalities for .NET Standard web apps.
+
+It features a rich LINQ provider which allows to write strongly typed queries based on your derived context and entity classes. A representation of the LINQ query is passed to the AzureSearch provider, to be translated in ODATA query language.</Description>
+        <Copyright>Copyright 2018</Copyright>
+        <PackageProjectUrl>https://github.com/nkovacic/AzureSearchToolkit</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/nkovacic/AzureSearchToolkit/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageTags>Azure Search AzureSearch AzureSearchLINQ AzureSearchToolkit LINQ Toolkit</PackageTags>
+        <RepositoryUrl>https://github.com/nkovacic/AzureSearchToolkit</RepositoryUrl>
+        <RepositoryType>GIT</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
