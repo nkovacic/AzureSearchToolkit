@@ -60,7 +60,7 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         [Fact]
         public void WhereCount()
         {
-            var midPoint = MemoryListings.OrderBy(o => o.CreatedAt).Skip(MemoryListings.Count / 2).First().Price + 1;
+            var midPoint = MemoryListings.OrderBy(o => o.CreatedAt).Skip(MemoryListings.Count / 2).First().Price;
 
             var searchQuery = data.SearchQuery<Listing>().Where(j => j.Price > midPoint).ToList();
             var memory = data.Memory<Listing>().Where(j => j.Price > midPoint).ToList();

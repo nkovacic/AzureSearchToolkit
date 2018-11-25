@@ -34,7 +34,7 @@ namespace AzureSearchToolkit.Utilities
                 }
                 else if (value is double)
                 {
-                    valueText = ((double)value).ToString("0.00", CultureInfo.InvariantCulture);
+                    valueText = ((double)value).ToString(CultureInfo.InvariantCulture);
                 }
                 else if (value is bool)
                 {
