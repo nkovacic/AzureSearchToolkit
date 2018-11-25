@@ -9,6 +9,7 @@ using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
 {
+    [Collection("QueryTestCollection 1")]
     public class SpatialTests
     {
         static readonly GeographyPoint filterPoint = GeographyPoint.Create(-21.18442142, -128.12241032);
@@ -17,22 +18,31 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         [Fact]
         public void SpatialOrderByDistance()
         {
-            DataAssert.Same<Listing>(q => q.OrderBy(w => AzureSearchMethods.Distance(w.Place, filterPoint)));
+            DataAssert.SameSequence(
+                DataAssert.Data.SearchQuery<Listing>().OrderBy(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
+                DataAssert.Data.Memory<Listing>()
+                    .OrderBy(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers)).Take(10).ToList()
+            );
         }
 
         [Fact]
         public void SpatialOrderByDescendingDistance()
         {
-            DataAssert.Same<Listing>(q => q.OrderByDescending(w => AzureSearchMethods.Distance(w.Place, filterPoint)));
+            DataAssert.SameSequence(
+                DataAssert.Data.SearchQuery<Listing>().OrderByDescending(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
+                DataAssert.Data.Memory<Listing>()
+                    .OrderByDescending(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers)).Take(10).ToList()
+            );
         }
 
         [Fact]
         public void SpatialFilterByDistance()
         {
             DataAssert.SameSequence(
-                DataAssert.Data.AzureSearch<Listing>().Where(w => AzureSearchMethods.Distance(w.Place, filterPoint) < 10000).ToList(),
+                DataAssert.Data.SearchQuery<Listing>()
+                    .Where(w => AzureSearchMethods.Distance(w.Place, filterPoint) < 10000).OrderBy(q => q.CreatedAt).ToList(),
                 DataAssert.Data.Memory<Listing>()
-                    .Where(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers) < 10000).ToList()
+                    .Where(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers) < 10000).OrderBy(q => q.CreatedAt).ToList()
             );
         }
     }

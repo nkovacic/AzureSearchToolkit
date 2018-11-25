@@ -33,7 +33,12 @@ namespace AzureSearchToolkit.IntegrationTest
             azureSearchContext = new AzureSearchContext(azureSearchConnection, new AzureSearchMapping());
         }
 
-        public IQueryable<T> AzureSearch<T>()
+        public AzureSearchContext SearchContext()
+        {
+            return azureSearchContext;
+        }
+
+        public IQueryable<T> SearchQuery<T>() where T : class
         {
             return azureSearchContext.Query<T>();
         }
@@ -73,6 +78,22 @@ namespace AzureSearchToolkit.IntegrationTest
                     var baseDirectory = AppContext.BaseDirectory;
                     var mockedDataPath = Path.Combine(baseDirectory, "App_Data\\listings-mocked.json");
 
+                    var searchParameters = new SearchParameters()
+                    {
+                        Select = new List<string>() { "id" },
+                        Top = 1000
+                    };
+
+                    if (countServiceResult.Data > 0)
+                    {
+                        var allDocuments = AsyncHelper.RunSync(() => azureSearchHelper.SearchDocuments<Listing>(searchParameters, indexName: Index));
+
+                        AsyncHelper.RunSync(() => azureSearchHelper
+                            .DeleteDocumentsInIndex(allDocuments.Data.Results.Select(q => new Listing { Id = q.Document.Id }), Index));
+
+                        azureSearchHelper.WaitForSearchOperationCompletion<Listing>(0, Index);
+                    }
+                    
                     var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath), new JsonSerializerSettings
                     {
                         Converters = new List<JsonConverter> { new GeographyPointJsonConverter() }
@@ -84,7 +105,17 @@ namespace AzureSearchToolkit.IntegrationTest
                     {
                         throw uploadOrMergeListingsServiceResult.PotentialException.GetException();
                     }
+
+                    azureSearchHelper.WaitForSearchOperationCompletion<Listing>(listings.Count, Index);
                 }
+            }
+        }
+
+        public void WaitForSearchOperationCompletion(int numberOfRequiredItemsInSearch)
+        {
+            using (var azureSearchHelper = new AzureSearchHelper(LamaConfiguration.Current(), NullLogger.Instance))
+            {
+                azureSearchHelper.WaitForSearchOperationCompletion<Listing>(numberOfRequiredItemsInSearch, Index);
             }
         }
     }

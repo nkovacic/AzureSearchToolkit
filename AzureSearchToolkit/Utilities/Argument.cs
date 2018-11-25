@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace AzureSearchToolkit.Utilities
@@ -20,7 +21,9 @@ namespace AzureSearchToolkit.Utilities
         public static void EnsureNotNull(string argumentName, object value)
         {
             if (value == null)
+            {
                 throw new ArgumentNullException(argumentName);
+            }
         }
 
         /// <summary>
@@ -31,7 +34,9 @@ namespace AzureSearchToolkit.Utilities
         public static void EnsurePositive(string argumentName, TimeSpan value)
         {
             if (value < TimeSpan.Zero)
+            {
                 throw new ArgumentOutOfRangeException(argumentName, "Must be a positive TimeSpan.");
+            }
         }
 
         /// <summary>
@@ -42,8 +47,11 @@ namespace AzureSearchToolkit.Utilities
         public static void EnsureNotBlank(string argumentName, string value)
         {
             EnsureNotNull(argumentName, value);
+
             if (string.IsNullOrWhiteSpace(value))
+            {
                 throw new ArgumentException("Cannot be a blank string.", argumentName);
+            }
         }
 
         /// <summary>
@@ -55,18 +63,36 @@ namespace AzureSearchToolkit.Utilities
         public static void EnsureIsDefinedEnum<TEnum>(string argumentName, TEnum value) where TEnum : struct
         {
             if (!Enum.IsDefined(typeof(TEnum), value))
+            {
                 throw new ArgumentOutOfRangeException(argumentName, $"Must be a defined {typeof(TEnum)} enum value.");
+            }  
         }
 
         /// <summary>
         /// Throw an ArgumentOutOfRangeException if the collection is empty or null.
         /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="argumentName">Name of the argument.</param>
         /// <param name="values">Array to be checked.</param>
-        public static void EnsureNotEmpty(string argumentName, ICollection values)
+        public static void EnsureNotEmpty<T>(string argumentName, IEnumerable<T> values)
         {
-            if (values == null || values.Count < 1)
+            if (values == null || values.Count() < 1)
+            {
                 throw new ArgumentOutOfRangeException(argumentName, "Must contain one or more values.");
+            }
         }
+
+        ///// <summary>
+        ///// Throw an ArgumentOutOfRangeException if the collection is empty or null.
+        ///// </summary>
+        ///// <param name="argumentName">Name of the argument.</param>
+        ///// <param name="values">Array to be checked.</param>
+        //public static void EnsureNotEmpty(string argumentName, ICollection values)
+        //{
+        //    if (values == null || values.Count < 1)
+        //    {
+        //        throw new ArgumentOutOfRangeException(argumentName, "Must contain one or more values.");
+        //    } 
+        //}
     }
 }

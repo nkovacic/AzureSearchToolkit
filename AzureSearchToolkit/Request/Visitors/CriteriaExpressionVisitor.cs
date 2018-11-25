@@ -3,6 +3,7 @@ using AzureSearchToolkit.Request;
 using AzureSearchToolkit.Request.Criteria;
 using AzureSearchToolkit.Request.Expressions;
 using AzureSearchToolkit.Utilities;
+using Microsoft.Azure.Search.Models;
 using Microsoft.Spatial;
 using System;
 using System.Collections;
@@ -411,13 +412,19 @@ namespace AzureSearchToolkit.Request.Visitors
             var constant = left as ConstantExpression ?? right as ConstantExpression;
 
             if (criteria == null || constant == null)
+            {
                 return null;
-
+            }
+                
             if (constant.Value.Equals(positiveCondition))
+            {
                 return criteria;
-
+            }
+                
             if (constant.Value.Equals(!positiveCondition))
+            {
                 return new CriteriaExpression(NotCriteria.Create(criteria.Criteria));
+            }
 
             return null;
         }
@@ -425,8 +432,11 @@ namespace AzureSearchToolkit.Request.Visitors
         static MemberExpression UnwrapNullableMethodExpression(MemberExpression m)
         {
             var lhsMemberExpression = m.Expression as MemberExpression;
+
             if (lhsMemberExpression != null && m.Member.Name == "HasValue" && m.Member.DeclaringType.IsGenericOf(typeof(Nullable<>)))
+            {
                 return lhsMemberExpression;
+            }
 
             return m;
         }

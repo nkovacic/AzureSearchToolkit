@@ -34,7 +34,7 @@ namespace AzureSearchToolkit.Utilities
                 }
                 else if (value is double)
                 {
-                    valueText = ((double)value).ToString("0.00", CultureInfo.InvariantCulture);
+                    valueText = ((double)value).ToString(CultureInfo.InvariantCulture);
                 }
                 else if (value is bool)
                 {
@@ -43,12 +43,14 @@ namespace AzureSearchToolkit.Utilities
                 else if (value is DateTime)
                 {
                     //valueText = ((DateTime)value).ToUniversalTime().ToString("o");
-                    valueText = ((DateTime)value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    valueText = ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    //valueText = ((DateTime)value).ToUniversalTime().ToString("O");
                 }
                 else if (value is DateTimeOffset)
                 {
                     //valueText = ((DateTimeOffset)value).ToUniversalTime().ToString("o"); //.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                    valueText = ((DateTimeOffset)value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    valueText = ((DateTimeOffset)value).ToString("yyyy-MM-ddTHH:mm:sszzz");
+                    //valueText = ((DateTimeOffset)value).ToUniversalTime().ToString("O");
                 }
             }
 

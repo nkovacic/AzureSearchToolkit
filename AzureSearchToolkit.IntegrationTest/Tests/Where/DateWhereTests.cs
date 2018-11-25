@@ -7,6 +7,7 @@ using Xunit;
 
 namespace AzureSearchToolkit.IntegrationTest.Tests
 {
+    [Collection("QueryTestCollection 1")]
     public class DateWhereTests
     {
         readonly DateTime averageCreatedDate = new DateTime(2018, 4, 1);

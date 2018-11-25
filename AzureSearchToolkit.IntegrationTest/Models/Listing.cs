@@ -19,6 +19,9 @@ namespace AzureSearchToolkit.IntegrationTest.Models
         [IsFilterable, IsSortable]
         public DateTime? CreatedAt { get; set; }
 
+        [IsSearchable]
+        public string Description { get; set; }
+
         [IsFacetable, IsFilterable, IsSortable]
         public double Price { get; set; }
 
@@ -39,6 +42,18 @@ namespace AzureSearchToolkit.IntegrationTest.Models
         public Listing(string id)
         {
             Id = id;
+        }
+
+        public Listing(Listing listing)
+        {
+            Id = listing.Id;
+            CreatedAt = listing.CreatedAt;
+            Description = listing.Description;
+            Price = listing.Price;
+            Title = listing.Title;
+            Active = listing.Active;
+            Tags = new List<string>(listing.Tags).ToArray();
+            Place = listing.Place;
         }
 
         public bool Equals(Listing other)

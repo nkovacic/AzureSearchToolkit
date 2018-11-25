@@ -9,18 +9,19 @@ namespace AzureSearchToolkit.Test
     {
         const string SearchName = "searchName";
         const string SearchKey = "searchKey";
+        const string Index = "Index";
 
         [Fact]
         public static void GuardClauses_Constructor()
         {
-            Assert.Throws<ArgumentNullException>(() => new AzureSearchConnection(null, null));
-            Assert.Throws<ArgumentException>(() => new AzureSearchConnection(null, null, index: ""));
+            Assert.Throws<ArgumentNullException>(() => new AzureSearchConnection(null, null, null));
+            Assert.Throws<ArgumentException>(() => new AzureSearchConnection(null, null, ""));
         }
 
         [Fact]
         public void GuardClauses_Timeout()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new AzureSearchConnection(SearchName, SearchKey, timeout: TimeSpan.FromDays(-1)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new AzureSearchConnection(SearchName, SearchKey, Index, timeout: TimeSpan.FromDays(-1)));
         }
     }
 }

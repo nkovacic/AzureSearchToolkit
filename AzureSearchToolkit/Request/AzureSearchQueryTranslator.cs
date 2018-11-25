@@ -12,7 +12,7 @@ using System.Reflection;
 
 namespace AzureSearchToolkit.Request.Visitors
 {
-    class AzureSearchQueryTranslator: CriteriaExpressionVisitor
+    class AzureSearchQueryTranslator : CriteriaExpressionVisitor
     {
         readonly AzureSearchRequest searchRequest = new AzureSearchRequest();
 
@@ -48,14 +48,14 @@ namespace AzureSearchToolkit.Request.Visitors
         }
 
         AzureSearchTranslateResult Translate(Expression e)
-        {           
+        {
             var evaluated = PartialEvaluator.Evaluate(e);
 
             CompleteHitTranslation(evaluated);
             CheckCriteriaForIllegalState();
 
             ApplyTypeSelectionCriteria();
-            
+
             return new AzureSearchTranslateResult(searchRequest, materializer);
         }
 
@@ -75,7 +75,7 @@ namespace AzureSearchToolkit.Request.Visitors
             if (materializer == null)
             {
                 materializer = new ListAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType ?? SourceType);
-            }              
+            }
             else if (materializer is ChainMaterializer && ((ChainMaterializer)materializer).Next == null)
             {
                 ((ChainMaterializer)materializer).Next = new ListAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType ?? SourceType);
@@ -92,7 +92,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         throw new NotSupportedException("AzureSearchMethods.ContainsAll must be used with ! prefix.");
                     }
-                    else if (((TermsCriteria)searchRequest.Criteria).Operator == TermsOperator.NotAny 
+                    else if (((TermsCriteria)searchRequest.Criteria).Operator == TermsOperator.NotAny
                         && ((TermsCriteria)searchRequest.Criteria).Values.Count > 1)
                     {
                         throw new NotSupportedException("AzureSearchMethods.ContainsAny cannot be used with ! prefix.");
@@ -106,24 +106,42 @@ namespace AzureSearchToolkit.Request.Visitors
             if (node.Method.DeclaringType == typeof(Queryable))
             {
                 return VisitQueryableMethodCall(node);
-            }   
-            
+            }
+
             if (node.Method.DeclaringType == typeof(AzureSearchQueryExtensions))
             {
                 return VisitAzureSearchExtensionsMethodCall(node);
             }
-                
+
             if (node.Method.DeclaringType == typeof(AzureSearchMethods))
             {
                 return VisitAzureSearchMethodsMethodCall(node);
             }
-                
+
 
             return base.VisitMethodCall(node);
         }
 
         internal Expression VisitAzureSearchExtensionsMethodCall(MethodCallExpression m)
         {
+            switch(m.Method.Name)
+            {
+                case "LuceneQuery":
+                    if (m.Arguments.Count > 1)
+                    {
+                        return VisitSearchQuery(QueryType.Full, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
+                    }
+
+                    throw GetOverloadUnsupportedException(m.Method);
+                case "SimpleQuery":
+                    if (m.Arguments.Count > 1)
+                    {
+                        return VisitSearchQuery(QueryType.Simple, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
+                    }
+
+                    throw GetOverloadUnsupportedException(m.Method);
+            }
+
             throw new NotSupportedException($"AzureSearch.{m.Method.Name} method is not supported");
         }
 
@@ -136,7 +154,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitSelect(m.Arguments[0], m.Arguments[1]);
                     }
-                        
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "First":
@@ -147,12 +165,12 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitFirstOrSingle(m.Arguments[0], null, m.Method.Name);
                     }
-                        
+
                     if (m.Arguments.Count == 2)
                     {
                         return VisitFirstOrSingle(m.Arguments[0], m.Arguments[1], m.Method.Name);
                     }
-                       
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "Where":
@@ -160,7 +178,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitWhere(m.Arguments[0], m.Arguments[1]);
                     }
-                        
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "Skip":
@@ -168,7 +186,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitSkip(m.Arguments[0], m.Arguments[1]);
                     }
-                        
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "Take":
@@ -176,7 +194,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitTake(m.Arguments[0], m.Arguments[1]);
                     }
-                        
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "OrderBy":
@@ -185,7 +203,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitOrderBy(m.Arguments[0], m.Arguments[1], m.Method.Name == "OrderBy");
                     }
-                        
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "ThenBy":
@@ -194,7 +212,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitOrderBy(m.Arguments[0], m.Arguments[1], m.Method.Name == "ThenBy");
                     }
-                        
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "Count":
@@ -203,12 +221,12 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitCount(m.Arguments[0], null, m.Method.ReturnType);
                     }
-                       
+
                     if (m.Arguments.Count == 2)
                     {
                         return VisitCount(m.Arguments[0], m.Arguments[1], m.Method.ReturnType);
                     }
-                       
+
                     throw GetOverloadUnsupportedException(m.Method);
 
                 case "Any":
@@ -216,12 +234,12 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitAny(m.Arguments[0], null);
                     }
-                       
+
                     if (m.Arguments.Count == 2)
                     {
                         return VisitAny(m.Arguments[0], m.Arguments[1]);
                     }
-                        
+
                     throw GetOverloadUnsupportedException(m.Method);
             }
 
@@ -284,7 +302,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return new CriteriaExpression(NotCriteria.Create(subExpression.Criteria));
                     }
-                        
+
                     break;
             }
 
@@ -309,18 +327,40 @@ namespace AzureSearchToolkit.Request.Visitors
         Expression VisitOrderBy(Expression source, Expression orderByExpression, bool ascending)
         {
             var lambda = orderByExpression.GetLambda();
-            var final = Visit(lambda.Body) as MemberExpression;
+            var visited = Visit(lambda.Body);
+            var memberExpr = visited as MemberExpression;
+            var criteriaExpr = visited as CriteriaExpression;
+            var orderBy = "";
 
-            if (final != null)
+            if (memberExpr != null)
             {
-                var fieldName = Mapping.GetFieldName(SourceType, final);
+                var fieldName = Mapping.GetFieldName(SourceType, memberExpr);
 
                 if (!string.IsNullOrWhiteSpace(fieldName))
                 {
-                    fieldName += ascending ? "" : " desc";
-
-                    searchRequest.AddOrderByField(fieldName);
+                    orderBy = fieldName;
                 }
+            }
+            else if (criteriaExpr != null)
+            {
+                var distanceCriteria = criteriaExpr.Criteria as DistanceCriteria;
+
+                if (distanceCriteria != null)
+                {
+                    orderBy = $"geo.distance({distanceCriteria.Field}, geography'POINT("
+                        + $"{ValueHelper.ConvertToSearchSafeValue(distanceCriteria.Value.Longitude)} "
+                        + $"{ValueHelper.ConvertToSearchSafeValue(distanceCriteria.Value.Latitude)})')";
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(orderBy))
+            {
+                if (!ascending)
+                {
+                    orderBy += " desc";
+                }
+                
+                searchRequest.AddOrderByField(orderBy);
             }
 
             return Visit(source);
@@ -348,24 +388,57 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 RebindPropertiesAndElasticFields(selectBody);
             }
-                
+
             if (selectBody is NewExpression)
             {
                 RebindSelectBody(selectBody, ((NewExpression)selectBody).Arguments, lambda.Parameters);
             }
-                
+
             if (selectBody is MethodCallExpression)
             {
                 RebindSelectBody(selectBody, ((MethodCallExpression)selectBody).Arguments, lambda.Parameters);
             }
-                
+
 
             if (selectBody is MemberInitExpression)
             {
                 RebindPropertiesAndElasticFields(selectBody);
             }
-                
+
             finalItemType = selectBody.Type;
+
+            return Visit(source);
+        }
+
+        Expression VisitSearchQuery(QueryType searchType, Expression source, Expression searchTextExpression, Expression searchModeExpression, Expression searchFieldsExpression)
+        {
+            var searchText = ((ConstantExpression)searchTextExpression).Value as string;         
+
+            Argument.EnsureNotBlank(nameof(searchTextExpression), searchText);
+            Argument.EnsureNotNull(nameof(searchModeExpression), ((ConstantExpression)searchModeExpression).Value);
+
+            var searchMode = (SearchMode)((ConstantExpression)searchModeExpression).Value;
+
+            if (!string.IsNullOrWhiteSpace(searchRequest.SearchText) && !searchRequest.SearchText.Equals("*"))
+            {
+                throw new NotSupportedException("Only one SimpleQuery or LuceneQuery per LINQ expression is supported!");
+            }
+         
+            searchRequest.SearchText = searchText;
+            searchRequest.SearchParameters.SearchMode = searchMode;
+            searchRequest.SearchParameters.QueryType = searchType;
+
+            if (searchFieldsExpression is NewArrayExpression)
+            {
+                var searchFieldArrayExpressions = ((NewArrayExpression)searchFieldsExpression).Expressions;
+
+                if (searchFieldArrayExpressions?.Any() == true)
+                {
+                    searchRequest.SearchParameters.SearchFields = searchFieldArrayExpressions
+                        .Select(q => Mapping.GetFieldName(TypeHelper.GetSequenceElementType(source.Type), q.GetLambda().Body as MemberExpression))
+                        .ToList();
+                }
+            }
 
             return Visit(source);
         }
@@ -381,7 +454,7 @@ namespace AzureSearchToolkit.Request.Visitors
             else
             {
                 RebindElasticFieldsAndChainProjector(selectExpression, entityParameter);
-            }  
+            }
         }
 
         /// <summary>
@@ -405,9 +478,9 @@ namespace AzureSearchToolkit.Request.Visitors
         /// <param name="selectExpression">Select expression to re-bind.</param>
         void RebindPropertiesAndElasticFields(Expression selectExpression)
         {
-            var projection = MemberProjectionExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);          
+            var projection = MemberProjectionExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);
             var compiled = Expression.Lambda(projection.Expression, projection.Parameter).Compile();
-            
+
             itemProjector = h => compiled.DynamicInvoke(h);
 
             searchRequest.AddRangeToSelect(projection.Collected.ToArray());
@@ -421,7 +494,7 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 searchRequest.SearchParameters.Skip = (int)skipConstant.Value;
             }
-                
+
             return Visit(source);
         }
 
