@@ -10,9 +10,15 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
         public static double GetDistance(GeographyPoint originalPoint, GeographyPoint destinationPoint,
             DistanceUnit distanceUnit = DistanceUnit.Kilometers)
         {
+            return GetDistance(originalPoint, destinationPoint, -1, distanceUnit);
+        }
+
+        public static double GetDistance(GeographyPoint originalPoint, GeographyPoint destinationPoint,
+            double defaultValue, DistanceUnit distanceUnit = DistanceUnit.Kilometers)
+        {
             if (originalPoint == null || destinationPoint == null)
             {
-                return -1;
+                return defaultValue;
             }
 
             return GetDistance(originalPoint.Latitude, originalPoint.Longitude, destinationPoint.Latitude,
