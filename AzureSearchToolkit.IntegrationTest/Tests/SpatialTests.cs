@@ -21,7 +21,10 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             DataAssert.SameSequence(
                 DataAssert.Data.SearchQuery<Listing>().OrderBy(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
                 DataAssert.Data.Memory<Listing>()
-                    .OrderBy(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers)).Take(10).ToList()
+                    .Where(q => q.Place != null)
+                    .OrderBy(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers))
+                    .Take(10)
+                    .ToList()
             );
         }
 
@@ -31,7 +34,9 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
             DataAssert.SameSequence(
                 DataAssert.Data.SearchQuery<Listing>().OrderByDescending(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
                 DataAssert.Data.Memory<Listing>()
-                    .OrderByDescending(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers)).Take(10).ToList()
+                    .OrderByDescending(w => SpatialHelper.GetDistance(w.Place, filterPoint, double.MaxValue, DistanceUnit.Kilometers))
+                    .Take(10)
+                    .ToList()
             );
         }
 
@@ -42,7 +47,9 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
                 DataAssert.Data.SearchQuery<Listing>()
                     .Where(w => AzureSearchMethods.Distance(w.Place, filterPoint) < 10000).OrderBy(q => q.CreatedAt).ToList(),
                 DataAssert.Data.Memory<Listing>()
-                    .Where(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers) < 10000).OrderBy(q => q.CreatedAt).ToList()
+                    .Where(w => w.Place != null && SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers) < 10000)
+                    .OrderBy(q => q.CreatedAt)
+                    .ToList()
             );
         }
     }
