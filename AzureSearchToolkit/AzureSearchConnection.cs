@@ -67,7 +67,7 @@ namespace AzureSearchToolkit
         }
 
         /// <inheritdoc/>
-        public async Task<bool> ChangeDocumentsInIndexAsync<T>(Dictionary<T, IndexActionType> changedDocuments, ILogger logger = null) 
+        public async Task<bool> ChangeDocumentsInIndexAsync<T>(SortedDictionary<T, IndexActionType> changedDocuments, ILogger logger = null) 
             where T : class
         {
             Argument.EnsureNotEmpty(nameof(changedDocuments), changedDocuments);

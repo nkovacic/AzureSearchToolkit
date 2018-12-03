@@ -35,7 +35,7 @@ namespace AzureSearchToolkit
         /// <typeparam name="T"></typeparam>
         /// <param name="changedDocuments">Dictionary with documents to change. Included are AzureSearchIndexType operation for each document.</param>
         /// <returns>If documents were succesfully changed, true is returned, otherwise false</returns>
-        Task<bool> ChangeDocumentsInIndexAsync<T>(Dictionary<T, IndexActionType> changedDocuments, ILogger logger = null) where T : class;
+        Task<bool> ChangeDocumentsInIndexAsync<T>(SortedDictionary<T, IndexActionType> changedDocuments, ILogger logger = null) where T : class;
 
         /// <summary>
         /// Issues search requests to AzureSearch.

@@ -36,69 +36,88 @@ namespace AzureSearchToolkit
             Logger = logger ?? NullLogger.Instance;
         }
 
-        public async Task<bool> AddAsync<T>(T document) where T: class
-        {
-            return await ChangeDocumentAsync(document, IndexActionType.Upload);
-        }
-
-        public async Task<bool> AddAsync<T>(IEnumerable<T> documents) where T : class
-        {
-            return await ChangeDocumentAsync(documents, IndexActionType.Upload);
-        }
-
-        public async Task<bool> AddOrUpdateAsync<T>(T document) where T : class
-        {
-            return await ChangeDocumentAsync(document, IndexActionType.MergeOrUpload);
-        }
-
-        public async Task<bool> AddOrUpdateAsync<T>(IEnumerable<T> documents) where T : class
-        {
-            return await ChangeDocumentAsync(documents, IndexActionType.MergeOrUpload);
-        }
-
-        public async Task<bool> RemoveAsync<T>(T document) where T : class
-        {
-            return await ChangeDocumentAsync(document, IndexActionType.Delete);
-        }
-
-        public async Task<bool> RemoveAsync<T>(IEnumerable<T> documents) where T : class
-        {
-            return await ChangeDocumentAsync(documents, IndexActionType.Delete);
-        }
-
-        public async Task<bool> UpdateAsync<T>(T document) where T : class
-        {
-            return await ChangeDocumentAsync(document, IndexActionType.Upload);
-        }
-
-        public async Task<bool> UpdateAsync<T>(IEnumerable<T> documents) where T : class
-        {
-            return await ChangeDocumentAsync(documents, IndexActionType.Upload);
-        }
-
-        public IQueryable<T> Query<T>() where T : class
-        {
-            return new AzureSearchQuery<T>(new AzureSearchQueryProvider(Connection, Mapping, Logger));
-        }
-
-        private async Task<bool> ChangeDocumentAsync<T>(T document, IndexActionType indexActionType) where T : class
+        /// <inheritdoc/>
+        public async Task<bool> ChangeDocumentAsync<T>(T document, IndexActionType indexActionType) where T : class
         {
             Argument.EnsureNotNull(nameof(document), document);
 
-            return await Connection.ChangeDocumentsInIndexAsync(new Dictionary<T, IndexActionType>()
+            return await Connection.ChangeDocumentsInIndexAsync(new SortedDictionary<T, IndexActionType>()
             {
                 { document, indexActionType }
             });
         }
 
-        private async Task<bool> ChangeDocumentAsync<T>(IEnumerable<T> documents, IndexActionType indexActionType) where T : class
+        /// <inheritdoc/>
+        public async Task<bool> ChangeDocumentAsync<T>(IEnumerable<T> documents, IndexActionType indexActionType) where T : class
         {
             Argument.EnsureNotEmpty(nameof(documents), documents);
 
-            return await Connection.ChangeDocumentsInIndexAsync(documents.ToDictionary(
+            return await Connection.ChangeDocumentsInIndexAsync(documents.ToSortedDictionary(
                 q => q,
                 q => indexActionType
             ));
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> ChangeDocumentAsync<T>(SortedDictionary<T, IndexActionType> documents) where T : class
+        {
+            Argument.EnsureNotEmpty(nameof(documents), documents);
+
+            return await Connection.ChangeDocumentsInIndexAsync(documents);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> AddAsync<T>(T document) where T: class
+        {
+            return await ChangeDocumentAsync(document, IndexActionType.Upload);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> AddAsync<T>(IEnumerable<T> documents) where T : class
+        {
+            return await ChangeDocumentAsync(documents, IndexActionType.Upload);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> AddOrUpdateAsync<T>(T document) where T : class
+        {
+            return await ChangeDocumentAsync(document, IndexActionType.MergeOrUpload);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> AddOrUpdateAsync<T>(IEnumerable<T> documents) where T : class
+        {
+            return await ChangeDocumentAsync(documents, IndexActionType.MergeOrUpload);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> RemoveAsync<T>(T document) where T : class
+        {
+            return await ChangeDocumentAsync(document, IndexActionType.Delete);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> RemoveAsync<T>(IEnumerable<T> documents) where T : class
+        {
+            return await ChangeDocumentAsync(documents, IndexActionType.Delete);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> UpdateAsync<T>(T document) where T : class
+        {
+            return await ChangeDocumentAsync(document, IndexActionType.Upload);
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> UpdateAsync<T>(IEnumerable<T> documents) where T : class
+        {
+            return await ChangeDocumentAsync(documents, IndexActionType.Upload);
+        }
+
+        /// <inheritdoc/>
+        public IQueryable<T> Query<T>() where T : class
+        {
+            return new AzureSearchQuery<T>(new AzureSearchQueryProvider(Connection, Mapping, Logger));
         }
     }
 }
