@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Search;
+﻿using AzureSearchToolkit.Attributes;
+using Microsoft.Azure.Search;
 using Microsoft.Azure.Search.Models;
 using Microsoft.Spatial;
 using System;
@@ -9,6 +10,7 @@ using System.Text;
 
 namespace AzureSearchToolkit.IntegrationTest.Models
 {
+    [AzureSearchIndex(Data.Index)]
     [SerializePropertyNamesAsCamelCase]
     class Listing : IEquatable<Listing>
     {
