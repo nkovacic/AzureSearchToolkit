@@ -45,7 +45,6 @@ namespace AzureSearchToolkit
                 Argument.EnsurePositive(nameof(timeout), timeout.Value);
             }
 
-            Argument.EnsureNotBlank(nameof(index), index);
             Argument.EnsureNotBlank(nameof(searchName), searchName);
             Argument.EnsureNotBlank(nameof(searchKey), searchKey);
 
@@ -74,6 +73,16 @@ namespace AzureSearchToolkit
             {
                 Argument.EnsureNotNull(nameof(indexWithType.Key), indexWithType.Key);
                 Argument.EnsureNotBlank(nameof(indexWithType.Value), indexWithType.Value);
+            }
+
+            if (indexes.GroupBy(q => q.Key).Count() != indexes.Count)
+            {
+                throw new ArgumentException("Duplicate types found in indexes!");
+            }
+
+            if (indexes.GroupBy(q => q.Value).Count() != indexes.Count)
+            {
+                throw new ArgumentException("Duplicate index names found in indexes!");
             }
 
             indexes = indexesWithType;

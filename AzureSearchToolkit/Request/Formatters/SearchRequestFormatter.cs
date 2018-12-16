@@ -37,6 +37,13 @@ namespace AzureSearchToolkit.Request.Formatters
                 return;
             }
 
+            if (criteria is ExistsCriteria)
+            {
+                SimpleBuild(criteria);
+
+                return;
+            }
+
             if (criteria is ComparisonCriteria)
             {
                 SimpleBuild(criteria);

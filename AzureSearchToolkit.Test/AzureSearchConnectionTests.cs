@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AzureSearchToolkit.Test.TestSupport;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
@@ -14,8 +15,11 @@ namespace AzureSearchToolkit.Test
         [Fact]
         public static void GuardClauses_Constructor()
         {
-            Assert.Throws<ArgumentNullException>(() => new AzureSearchConnection(null, null, null));
-            Assert.Throws<ArgumentException>(() => new AzureSearchConnection(null, null, ""));
+            Assert.Throws<ArgumentNullException>(() => new AzureSearchConnection(null, null, string.Empty, typeof(Listing)));
+            Assert.Throws<ArgumentNullException>(() => new AzureSearchConnection(null, null, "", typeof(Listing)));
+            Assert.Throws<ArgumentNullException>(() => new AzureSearchConnection(SearchName, SearchKey, null, typeof(Listing)));
+            Assert.Throws<ArgumentNullException>(() => new AzureSearchConnection(SearchName, SearchKey, Index, default(Type)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new AzureSearchConnection(SearchName, SearchKey, new Dictionary<Type, string>()));
         }
 
         [Fact]
