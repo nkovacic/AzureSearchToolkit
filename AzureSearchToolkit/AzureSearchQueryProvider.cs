@@ -24,6 +24,8 @@ namespace AzureSearchToolkit
 
         internal IAzureSearchMapping Mapping { get;}
 
+        internal Type SearchType { get; }
+
         /// <summary>
         /// Create a new AzureSearchQueryProvider for a given connection, logger and field prefix.
         /// </summary>
@@ -31,7 +33,7 @@ namespace AzureSearchToolkit
         /// <param name="mapping">A mapping to specify how queries and results are translated.</param>
         /// <param name="log">A log to receive any information or debugging messages.</param>
         /// <param name="retryPolicy">A policy to describe how to handle network issues.</param>
-        public AzureSearchQueryProvider(IAzureSearchConnection connection, IAzureSearchMapping mapping, ILogger logger)
+        public AzureSearchQueryProvider(IAzureSearchConnection connection, IAzureSearchMapping mapping, Type searchType, ILogger logger)
         {
             Argument.EnsureNotNull(nameof(connection), connection);
             Argument.EnsureNotNull(nameof(mapping), mapping);
@@ -39,6 +41,7 @@ namespace AzureSearchToolkit
 
             Connection = connection;
             Mapping = mapping;
+            SearchType = searchType;
             Logger = logger;
         }
 
@@ -104,8 +107,8 @@ namespace AzureSearchToolkit
             {
                 var formatter = new SearchRequestFormatter(Mapping, translation.SearchRequest);
 
-                var response = await Connection.SearchAsync(formatter.SearchRequest.SearchParameters, 
-                    translation.SearchRequest.SearchText, Logger);
+                var response = await Connection.SearchAsync(formatter.SearchRequest.SearchParameters,
+                    SearchType, translation.SearchRequest.SearchText, Logger);
 
                 return translation.Materializer.Materialize(response);
             }

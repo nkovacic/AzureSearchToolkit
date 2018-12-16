@@ -117,7 +117,7 @@ namespace AzureSearchToolkit
         /// <inheritdoc/>
         public IQueryable<T> Query<T>() where T : class
         {
-            return new AzureSearchQuery<T>(new AzureSearchQueryProvider(Connection, Mapping, Logger));
+            return new AzureSearchQuery<T>(new AzureSearchQueryProvider(Connection, Mapping, typeof(T), Logger));
         }
     }
 }

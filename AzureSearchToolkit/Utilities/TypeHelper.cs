@@ -13,6 +13,21 @@ namespace AzureSearchToolkit.Utilities
     /// </summary>
     static class TypeHelper
     {
+        public static TValue GetAttributeValue<TAttribute, TValue>(Type type, Func<TAttribute, TValue> valueSelector)
+            where TAttribute : Attribute
+        {
+            TAttribute attribute = type
+                .GetCustomAttributes(typeof(TAttribute), true)
+                .FirstOrDefault() as TAttribute;
+
+            if (attribute != null)
+            {
+                return valueSelector(attribute);
+            }
+
+            return default(TValue);
+        }
+
         /// <summary>
         /// Get the return type of a method, property or field.
         /// </summary>

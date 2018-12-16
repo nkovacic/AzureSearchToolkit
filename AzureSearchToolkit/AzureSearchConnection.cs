@@ -1,4 +1,5 @@
-﻿using AzureSearchToolkit.Logging;
+﻿using AzureSearchToolkit.Attributes;
+using AzureSearchToolkit.Logging;
 using AzureSearchToolkit.Request;
 using AzureSearchToolkit.Utilities;
 using Microsoft.Azure.Search;
@@ -12,17 +13,21 @@ using System.Threading.Tasks;
 
 namespace AzureSearchToolkit
 {
-    public class AzureSearchConnection: IAzureSearchConnection, IDisposable
+    public class AzureSearchConnection : IAzureSearchConnection, IDisposable
     {
         static readonly TimeSpan defaultTimeout = TimeSpan.FromSeconds(10);
 
-        internal Lazy<SearchServiceClient> SearchClient { get; private set; }
+        /// <summary>
+        /// Placeholder for index when no Type is used in constructor
+        /// </summary>
+        string IndexPlaceholder { get; set; }
 
         /// <summary>
-        /// The name of the index on the AzureSearch instance.
+        /// Azure Search index mapping for CLR Type
         /// </summary>
-        /// <example>northwind</example>
-        public string Index { get; }
+        readonly Dictionary<Type, string> indexes;
+
+        internal Lazy<SearchServiceClient> SearchClient { get; private set; }
 
         /// <summary>
         /// How long to wait for a response to a network request before
@@ -30,20 +35,50 @@ namespace AzureSearchToolkit
         /// </summary>
         public TimeSpan Timeout { get; }
 
+        public AzureSearchConnection(string searchName, string searchKey, TimeSpan? timeout = null)
+            : this(searchName, searchKey, string.Empty, timeout) { }
+
         public AzureSearchConnection(string searchName, string searchKey, string index, TimeSpan? timeout = null)
         {
             if (timeout.HasValue)
             {
                 Argument.EnsurePositive(nameof(timeout), timeout.Value);
             }
-                
+
             Argument.EnsureNotBlank(nameof(index), index);
             Argument.EnsureNotBlank(nameof(searchName), searchName);
             Argument.EnsureNotBlank(nameof(searchKey), searchKey);
 
-            SearchClient = new Lazy<SearchServiceClient>(() => new SearchServiceClient(searchName, new SearchCredentials(searchKey)));
+            IndexPlaceholder = index;
+            indexes = new Dictionary<Type, string>();
 
-            Index = index;
+            SearchClient = new Lazy<SearchServiceClient>(() => new SearchServiceClient(searchName, new SearchCredentials(searchKey)));
+            Timeout = timeout ?? defaultTimeout;
+        }
+
+        public AzureSearchConnection(string searchName, string searchKey, string index, Type indexType, TimeSpan? timeout = null)
+            : this(searchName, searchKey, new Dictionary<Type, string>() { { indexType, index } }, timeout) { }
+
+        public AzureSearchConnection(string searchName, string searchKey, Dictionary<Type, string> indexesWithType, TimeSpan? timeout = null)
+        {
+            if (timeout.HasValue)
+            {
+                Argument.EnsurePositive(nameof(timeout), timeout.Value);
+            }
+
+            Argument.EnsureNotEmpty(nameof(indexesWithType), indexesWithType);
+            Argument.EnsureNotBlank(nameof(searchName), searchName);
+            Argument.EnsureNotBlank(nameof(searchKey), searchKey);
+
+            foreach (var indexWithType in indexesWithType)
+            {
+                Argument.EnsureNotNull(nameof(indexWithType.Key), indexWithType.Key);
+                Argument.EnsureNotBlank(nameof(indexWithType.Value), indexWithType.Value);
+            }
+
+            indexes = indexesWithType;
+
+            SearchClient = new Lazy<SearchServiceClient>(() => new SearchServiceClient(searchName, new SearchCredentials(searchKey)));
             Timeout = timeout ?? defaultTimeout;
         }
 
@@ -67,7 +102,7 @@ namespace AzureSearchToolkit
         }
 
         /// <inheritdoc/>
-        public async Task<bool> ChangeDocumentsInIndexAsync<T>(SortedDictionary<T, IndexActionType> changedDocuments, ILogger logger = null) 
+        public async Task<bool> ChangeDocumentsInIndexAsync<T>(SortedDictionary<T, IndexActionType> changedDocuments, ILogger logger = null)
             where T : class
         {
             Argument.EnsureNotEmpty(nameof(changedDocuments), changedDocuments);
@@ -79,7 +114,7 @@ namespace AzureSearchToolkit
 
             await EnsureSearchIndexAsync<T>(logger);
 
-            var index = Index;
+            var index = GetIndex<T>();
             var indexActions = new List<IndexAction<T>>();
 
             foreach (var keyValuePair in changedDocuments)
@@ -119,7 +154,7 @@ namespace AzureSearchToolkit
                 // Sometimes when your Search service is under load, indexing will fail for some of the documents in
                 // the batch. Depending on your application, you can take compensating actions like delaying and
                 // retrying. For this simple demo, we just log the failed document keys and continue.
-                logger.Log(TraceEventType.Error, e, null , "Failed to index some of the documents: {0}",
+                logger.Log(TraceEventType.Error, e, null, "Failed to index some of the documents: {0}",
                     string.Join(", ", e.IndexingResults.Where(r => !r.Succeeded).Select(r => r.Key)));
             }
             catch (Exception e)
@@ -133,7 +168,7 @@ namespace AzureSearchToolkit
         /// <inheritdoc/>
         public async Task<bool> EnsureSearchIndexAsync<T>(ILogger logger = null) where T : class
         {
-            var index = Index;
+            var index = GetIndex<T>();
 
             if (logger == null)
             {
@@ -184,15 +219,16 @@ namespace AzureSearchToolkit
         }
 
         /// <inheritdoc/>
-        public async Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, string searchText = null,
-            ILogger logger = null)
+        public async Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, Type searchType,
+            string searchText = null, ILogger logger = null)
         {
             if (logger == null)
             {
                 logger = NullLogger.Instance;
             }
 
-            var indexClient = SearchClient.Value.Indexes.GetClient(Index);
+            var searchIndex = GetIndex(searchType);
+            var indexClient = SearchClient.Value.Indexes.GetClient(searchIndex);
 
             if (indexClient != null)
             {
@@ -214,31 +250,66 @@ namespace AzureSearchToolkit
                             {
                                 {"SearchServiceName", SearchClient.Value.SearchServiceName },
                                 {"SearchId", searchId},
-                                {"IndexName", Index},
+                                {"IndexName", searchIndex},
                                 {"QueryTerms", searchText}
                             }, "Search");
                         }
                     }
                     else
                     {
-                        logger.Log(TraceEventType.Warning, null, null, $"Search failed for indexName {Index}. Reason: {response.Response.ReasonPhrase}");
+                        logger.Log(TraceEventType.Warning, null, null,
+                            $"Search failed for indexName {searchIndex}. Reason: {response.Response.ReasonPhrase}");
                     }
 
                     return response;
                 }
                 catch (Exception e)
                 {
-                    logger.Log(TraceEventType.Error, e, null, $"Search failed for indexName {Index}. Query text: {searchText}, Query: {searchParameters.ToString()}, Reason: {e.Message}");
+                    logger.Log(TraceEventType.Error, e, null,
+                        $"Search failed for indexName {searchIndex}. Query text: {searchText}, Query: {searchParameters.ToString()}, Reason: {e.Message}");
 
                     throw e;
                 }
             }
             else
             {
-                logger.Log(TraceEventType.Warning, null, null, $"Problem with creating search client for {Index} index!");
+                logger.Log(TraceEventType.Warning, null, null, $"Problem with creating search client for {searchIndex} index!");
             }
 
             return null;
+        }
+
+        private string GetIndex<T>() where T : class
+        {
+            return GetIndex(typeof(T));
+        }
+
+        private string GetIndex(Type type)
+        {
+            if (!indexes.ContainsKey(type))
+            {
+                if (!string.IsNullOrWhiteSpace(IndexPlaceholder) && indexes.Count == 0)
+                {
+                    indexes.Add(type, IndexPlaceholder);
+
+                    IndexPlaceholder = null;
+                }
+                else
+                {
+                    var searchIndex = TypeHelper.GetAttributeValue<AzureSearchIndexAttribute, string>(type, (searchAttribute) => searchAttribute.Index);
+
+                    if (!string.IsNullOrWhiteSpace(searchIndex))
+                    {
+                        indexes.Add(type, searchIndex);
+                    }
+                    else
+                    {
+                        throw new KeyNotFoundException($"AzureSearch index for type {type} was not found!");
+                    }
+                }
+            }
+
+            return indexes[type];
         }
     }
 }
