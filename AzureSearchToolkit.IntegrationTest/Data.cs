@@ -17,9 +17,10 @@ namespace AzureSearchToolkit.IntegrationTest
 {
     class Data
     {
-        const int ExpectedDataCount = 100;
-        const string Index = "integration-test";      
+        public const string Index = "integration-test";
 
+        const int ExpectedDataCount = 100;
+         
         static readonly AzureSearchConnection azureSearchConnection;
         static readonly AzureSearchContext azureSearchContext;
 
@@ -28,7 +29,7 @@ namespace AzureSearchToolkit.IntegrationTest
         static Data()
         {
             azureSearchConnection = new AzureSearchConnection(LamaConfiguration.Current().GetModel().SearchName,
-                LamaConfiguration.Current().GetModel().SearchKey, Index);
+                LamaConfiguration.Current().GetModel().SearchKey);
 
             azureSearchContext = new AzureSearchContext(azureSearchConnection, new AzureSearchMapping());
         }

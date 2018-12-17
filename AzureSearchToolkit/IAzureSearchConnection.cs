@@ -12,11 +12,6 @@ namespace AzureSearchToolkit
     public interface IAzureSearchConnection
     {
         /// <summary>
-        /// The name of the index on Azure Search instance.
-        /// </summary>
-        string Index { get; }
-
-        /// <summary>
         /// How long to wait for a response to a network request before
         /// giving up.
         /// </summary>
@@ -44,7 +39,7 @@ namespace AzureSearchToolkit
         /// <param name="searchText">The search text applied to the request.</param>
         /// <param name="logger">The logging mechanism for diagnostic information.</param>
         /// <returns>An AzureOperationResponse object containing the desired search results.</returns>
-        Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, string searchText = null,
-            ILogger logger = null);
+        Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, Type searchType, 
+            string searchText = null, ILogger logger = null);
     }
 }

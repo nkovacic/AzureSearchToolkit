@@ -26,5 +26,11 @@
         {
             return new MissingCriteria(Field);
         }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return $"{Field} ne null";
+        }
     }
 }

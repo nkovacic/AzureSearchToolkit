@@ -19,7 +19,9 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         public void SpatialOrderByDistance()
         {
             DataAssert.SameSequence(
-                DataAssert.Data.SearchQuery<Listing>().OrderBy(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
+                DataAssert.Data.SearchQuery<Listing>()
+                    .Where(q => q.Place != null)
+                    .OrderBy(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
                 DataAssert.Data.Memory<Listing>()
                     .Where(q => q.Place != null)
                     .OrderBy(w => SpatialHelper.GetDistance(w.Place, filterPoint, DistanceUnit.Kilometers))
@@ -31,12 +33,18 @@ namespace AzureSearchToolkit.IntegrationTest.Tests
         [Fact]
         public void SpatialOrderByDescendingDistance()
         {
-            DataAssert.SameSequence(
-                DataAssert.Data.SearchQuery<Listing>().OrderByDescending(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList(),
-                DataAssert.Data.Memory<Listing>()
+            var expect = DataAssert.Data.SearchQuery<Listing>()
+                .Where(q => q.Place != null)
+                .OrderByDescending(w => AzureSearchMethods.Distance(w.Place, filterPoint)).Take(10).ToList();
+            var actual = DataAssert.Data.Memory<Listing>()
+                    .Where(q => q.Place != null)
                     .OrderByDescending(w => SpatialHelper.GetDistance(w.Place, filterPoint, double.MaxValue, DistanceUnit.Kilometers))
                     .Take(10)
-                    .ToList()
+                    .ToList();
+
+            DataAssert.SameSequence(
+                expect,
+                actual
             );
         }
 

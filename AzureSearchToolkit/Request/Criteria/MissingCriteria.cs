@@ -26,5 +26,11 @@
         {
             return new ExistsCriteria(Field);
         }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return $"{Field} eq null";
+        }
     }
 }
