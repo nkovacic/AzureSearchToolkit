@@ -13,9 +13,9 @@ namespace AzureSearchToolkit
         readonly AzureSearchQueryProvider provider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ElasticQuery{T}"/> class.
+        /// Initializes a new instance of the <see cref="AzureSearchQuery{T}"/> class.
         /// </summary>
-        /// <param name="provider">The <see cref="ElasticQueryProvider"/> used to execute the queries.</param>
+        /// <param name="provider">The <see cref="AzureSearchQueryProvider"/> used to execute the queries.</param>
         public AzureSearchQuery(AzureSearchQueryProvider provider)
         {
             Argument.EnsureNotNull(nameof(provider), provider);
@@ -27,7 +27,7 @@ namespace AzureSearchToolkit
         /// <summary>
         /// Initializes a new instance of this class.
         /// </summary>
-        /// <param name="provider">The <see cref="ElasticQueryProvider"/> used to execute the queries.</param>
+        /// <param name="provider">The <see cref="AzureSearchQueryProvider"/> used to execute the queries.</param>
         /// <param name="expression">The <see cref="Expression"/> that represents the LINQ query so far.</param>
         public AzureSearchQuery(AzureSearchQueryProvider provider, Expression expression)
         {
