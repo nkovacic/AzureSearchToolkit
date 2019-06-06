@@ -17,7 +17,7 @@ It features a rich LINQ provider which allows to write strongly typed queries ba
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Azure.Search" Version="5.0.2" />
+        <PackageReference Include="Microsoft.Azure.Search" Version="9.0.1" />
     </ItemGroup>
 
 </Project>

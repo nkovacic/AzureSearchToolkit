@@ -21,7 +21,7 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="response">AzureOperationResponse to obtain the existence of a result.</param>
         /// <returns>Return result of previous materializer, previously processed by self</returns>
-        public virtual object Materialize(AzureOperationResponse<DocumentSearchResult> response)
+        public virtual object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
         {
             Argument.EnsureNotNull("Next materializer must be setted.", Next);
 

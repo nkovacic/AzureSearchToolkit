@@ -16,7 +16,7 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="response">The <see cref="AzureOperationResponse{T}"/> to check for emptiness.</param>
         /// <returns>true if the source sequence contains any elements; otherwise, false.</returns>
-        public object Materialize(AzureOperationResponse<DocumentSearchResult> response)
+        public object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
         {
             if (response.Body.Count < 0)
             {

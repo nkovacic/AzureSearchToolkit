@@ -30,7 +30,7 @@ namespace AzureSearchToolkit.Response.Materializers
             this.defaultIfNone = defaultIfNone;
         }
 
-        public object Materialize(AzureOperationResponse<DocumentSearchResult> response)
+        public object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
         {
             Argument.EnsureNotNull(nameof(response), response);
 

@@ -21,7 +21,7 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="response">The <see cref="AzureOperationResponse"/> to obtain the count value from.</param>
         /// <returns>The result count expressed as either an int or long depending on the size of the count.</returns>
-        public object Materialize(AzureOperationResponse<DocumentSearchResult> response)
+        public object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
         {
             if (response.Body.Count < 0)
             {

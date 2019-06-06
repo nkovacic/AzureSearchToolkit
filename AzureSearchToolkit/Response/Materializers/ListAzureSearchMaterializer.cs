@@ -35,7 +35,7 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="response">The <see cref="AzureOperationResponse"/> containing the hits to materialize.</param>
         /// <returns>List of <see cref="elementType"/> objects as constructed by the <see cref="projector"/>.</returns>
-        public object Materialize(AzureOperationResponse<DocumentSearchResult> response)
+        public object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
         {
             Argument.EnsureNotNull(nameof(response), response);
 

@@ -34,14 +34,13 @@ namespace AzureSearchToolkit.Json
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var geographyPoint = value as GeographyPoint;
-
-            if (geographyPoint != null)
+            if (value is GeographyPoint geographyPoint)
             {
-                var geographyPointJson = new JObject();
-
-                geographyPointJson.Add("latitude", geographyPoint.Latitude);
-                geographyPointJson.Add("longitude", geographyPoint.Longitude);
+                var geographyPointJson = new JObject
+                {
+                    { "latitude", geographyPoint.Latitude },
+                    { "longitude", geographyPoint.Longitude }
+                };
 
                 geographyPointJson.WriteTo(writer);
             }

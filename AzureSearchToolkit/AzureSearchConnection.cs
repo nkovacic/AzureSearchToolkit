@@ -228,7 +228,7 @@ namespace AzureSearchToolkit
         }
 
         /// <inheritdoc/>
-        public async Task<AzureOperationResponse<DocumentSearchResult>> SearchAsync(SearchParameters searchParameters, Type searchType,
+        public async Task<AzureOperationResponse<DocumentSearchResult<Document>>> SearchAsync(SearchParameters searchParameters, Type searchType,
             string searchText = null, ILogger logger = null)
         {
             if (logger == null)

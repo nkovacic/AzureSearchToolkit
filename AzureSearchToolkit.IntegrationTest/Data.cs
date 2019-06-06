@@ -17,7 +17,7 @@ namespace AzureSearchToolkit.IntegrationTest
 {
     class Data
     {
-        public const string Index = "integration-test";
+        public const string Index = "azure-search-toolkit-integration-test";
 
         const int ExpectedDataCount = 100;
          
