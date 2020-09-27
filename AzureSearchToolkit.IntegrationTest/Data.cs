@@ -20,7 +20,7 @@ namespace AzureSearchToolkit.IntegrationTest
         public const string Index = "azure-search-toolkit-integration-test";
 
         const int ExpectedDataCount = 100;
-         
+
         static readonly AzureSearchConnection azureSearchConnection;
         static readonly AzureSearchContext azureSearchContext;
 
@@ -58,7 +58,7 @@ namespace AzureSearchToolkit.IntegrationTest
             {
                 throw new InvalidOperationException(
                     $"Tests expect {ExpectedDataCount} entries but {memory.Count} loaded from AzureSearch index '{Index}'");
-            }              
+            }
         }
 
         public void LoadFromJsonToAzureSearch()
@@ -72,14 +72,14 @@ namespace AzureSearchToolkit.IntegrationTest
                     throw createIndexServiceResult.PotentialException.GetException();
                 }
 
-                var countServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.CountDocuments<Listing>(new SearchParameters(), indexName: Index));
+                var countServiceResult = AsyncHelper.RunSync(() => azureSearchHelper.CountDocuments<Listing>(new SearchOptions(), indexName: Index));
 
                 if (!countServiceResult.IsStatusOk() || countServiceResult.Data != ExpectedDataCount)
                 {
                     var baseDirectory = AppContext.BaseDirectory;
                     var mockedDataPath = Path.Combine(baseDirectory, "App_Data\\listings-mocked.json");
 
-                    var searchParameters = new SearchParameters()
+                    var searchOptions = new SearchOptions()
                     {
                         Select = new List<string>() { "id" },
                         Top = 1000
@@ -87,15 +87,15 @@ namespace AzureSearchToolkit.IntegrationTest
 
                     if (countServiceResult.Data > 0)
                     {
-                        var allDocuments = AsyncHelper.RunSync(() => azureSearchHelper.SearchDocuments<Listing>(searchParameters, indexName: Index));
+                        var allDocuments = AsyncHelper.RunSync(() => azureSearchHelper.SearchDocuments<Listing>(searchOptions, indexName: Index));
 
                         AsyncHelper.RunSync(() => azureSearchHelper
                             .DeleteDocumentsInIndex(allDocuments.Data.Results.Select(q => new Listing { Id = q.Document.Id }), Index));
 
                         azureSearchHelper.WaitForSearchOperationCompletion<Listing>(0, Index);
                     }
-                    
-                    var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath), new JsonSerializerSettings
+
+                    var listings = JsonConvert.DeserializeObject<List<Listing>>(File.ReadAllText(mockedDataPath), new JsonSerializerOptions
                     {
                         Converters = new List<JsonConverter> { new GeographyPointJsonConverter() }
                     });
@@ -114,7 +114,7 @@ namespace AzureSearchToolkit.IntegrationTest
 
         public void WaitForSearchOperationCompletion(int numberOfRequiredItemsInSearch)
         {
-            using (var azureSearchHelper = new AzureSearchHelper(LamaConfiguration.Current(), NullLogger.Instance))
+            using (var azureSearchHelper = new AzureSearchHelper(LamaConfiguration.Current()))
             {
                 azureSearchHelper.WaitForSearchOperationCompletion<Listing>(numberOfRequiredItemsInSearch, Index);
             }

@@ -37,7 +37,7 @@ namespace AzureSearchToolkit.Utilities
                 if (foundProperty != null)
                 {
                     foundProperty.SetValue(someObject, item.Value, null);
-                }      
+                }
             }
 
             return someObject;

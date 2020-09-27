@@ -34,13 +34,13 @@ namespace AzureSearchToolkit.IntegrationTest
             }
         }
 
-        public static void Same<TSource>(Func<IQueryable<TSource>, IQueryable<TSource>> query, 
+        public static void Same<TSource>(Func<IQueryable<TSource>, IQueryable<TSource>> query,
             bool useDefaultOrder = true, bool ignoreOrder = false) where TSource : class
         {
             Same<TSource, TSource>(query, useDefaultOrder, ignoreOrder);
         }
 
-        public static void Same<TSource, TTarget>(Func<IQueryable<TSource>, IQueryable<TTarget>> query, 
+        public static void Same<TSource, TTarget>(Func<IQueryable<TSource>, IQueryable<TTarget>> query,
             bool useDefaultOrder = true, bool ignoreOrder = false) where TSource : class
         {
             var expectQuery = query(Data.Memory<TSource>());

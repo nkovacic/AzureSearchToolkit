@@ -11,13 +11,13 @@ namespace AzureSearchToolkit.Request.Visitors
     /// and the local <see cref="IAzureSearchMaterializer"/> necessary to
     /// instantiate objects.
     /// </summary>
-    class AzureSearchTranslateResult
+    class AzureSearchTranslateResult<T>
     {
         public AzureSearchRequest SearchRequest { get; }
 
-        public IAzureSearchMaterializer Materializer { get; }
+        public IAzureSearchMaterializer<T> Materializer { get; }
 
-        public AzureSearchTranslateResult(AzureSearchRequest searchRequest, IAzureSearchMaterializer materializer)
+        public AzureSearchTranslateResult(AzureSearchRequest searchRequest, IAzureSearchMaterializer<T> materializer)
         {
             SearchRequest = searchRequest;
             Materializer = materializer;

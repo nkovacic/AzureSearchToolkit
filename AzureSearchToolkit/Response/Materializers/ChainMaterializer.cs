@@ -1,17 +1,17 @@
-﻿using AzureSearchToolkit.Utilities;
-using Microsoft.Azure.Search.Models;
-using Microsoft.Rest.Azure;
+﻿using Azure;
+using Azure.Search.Documents.Models;
+using AzureSearchToolkit.Utilities;
 
 namespace AzureSearchToolkit.Response.Materializers
 {
-    abstract class ChainMaterializer : IAzureSearchMaterializer
+    abstract class ChainMaterializer<T> : IAzureSearchMaterializer<T>
     {
-        protected ChainMaterializer(IAzureSearchMaterializer next)
+        protected ChainMaterializer(IAzureSearchMaterializer<T> next)
         {
             Next = next;
         }
 
-        public IAzureSearchMaterializer Next
+        public IAzureSearchMaterializer<T> Next
         {
             get; set;
         }
@@ -21,7 +21,7 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="response">AzureOperationResponse to obtain the existence of a result.</param>
         /// <returns>Return result of previous materializer, previously processed by self</returns>
-        public virtual object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
+        public object Materialize(Response<SearchResults<T>> response)
         {
             Argument.EnsureNotNull("Next materializer must be setted.", Next);
 

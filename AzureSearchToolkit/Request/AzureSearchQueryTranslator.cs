@@ -1,34 +1,28 @@
-﻿using AzureSearchToolkit.Mapping;
+﻿using Azure.Search.Documents.Models;
 using AzureSearchToolkit.Request.Criteria;
 using AzureSearchToolkit.Request.Expressions;
 using AzureSearchToolkit.Response.Materializers;
 using AzureSearchToolkit.Utilities;
-using Microsoft.Azure.Search.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
 
 namespace AzureSearchToolkit.Request.Visitors
 {
-    class AzureSearchQueryTranslator : CriteriaExpressionVisitor
+    class AzureSearchQueryTranslator<T> : CriteriaExpressionVisitor<T>
     {
         readonly AzureSearchRequest searchRequest = new AzureSearchRequest();
 
         Type finalItemType;
-        Func<Document, object> itemProjector;
-        IAzureSearchMaterializer materializer;
+        Func<T, object> itemProjector;
+        IAzureSearchMaterializer<T> materializer;
 
-        Func<Document, object> DefaultItemProjector
-        {
-            get { return document => Mapping.Materialize(document, SourceType); }
-        }
+        Func<T, object> DefaultItemProjector => document => document;
 
-        AzureSearchQueryTranslator(IAzureSearchMapping mapping, Type sourceType)
-            : base(mapping, sourceType)
-        {
-        }
+        AzureSearchQueryTranslator(JsonSerializerOptions jsonOptions) : base(jsonOptions) { }
 
         static Type FindSourceType(Expression e)
         {
@@ -42,30 +36,19 @@ namespace AzureSearchToolkit.Request.Visitors
             return sourceQuery.ElementType;
         }
 
-        internal static AzureSearchTranslateResult Translate(IAzureSearchMapping mapping, Expression e)
+        internal static AzureSearchTranslateResult<T> Translate(Expression e, JsonSerializerOptions jsonOptions)
         {
-            return new AzureSearchQueryTranslator(mapping, FindSourceType(e)).Translate(e);
+            return new AzureSearchQueryTranslator<T>(jsonOptions).Translate(e);
         }
 
-        AzureSearchTranslateResult Translate(Expression e)
+        AzureSearchTranslateResult<T> Translate(Expression e)
         {
             var evaluated = PartialEvaluator.Evaluate(e);
 
             CompleteHitTranslation(evaluated);
             CheckCriteriaForIllegalState();
 
-            ApplyTypeSelectionCriteria();
-
-            return new AzureSearchTranslateResult(searchRequest, materializer);
-        }
-
-        void ApplyTypeSelectionCriteria()
-        {
-            var typeCriteria = Mapping.GetTypeSelectionCriteria(SourceType);
-
-            searchRequest.Criteria = searchRequest.Criteria == null || searchRequest.Criteria == ConstantCriteria.True
-                ? typeCriteria
-                : AndCriteria.Combine(typeCriteria, searchRequest.Criteria);
+            return new AzureSearchTranslateResult<T>(searchRequest, materializer);
         }
 
         void CompleteHitTranslation(Expression evaluated)
@@ -74,11 +57,11 @@ namespace AzureSearchToolkit.Request.Visitors
 
             if (materializer == null)
             {
-                materializer = new ListAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType ?? SourceType);
+                materializer = new ListAzureSearchMaterializer<T>(itemProjector ?? DefaultItemProjector, finalItemType ?? typeof(T));
             }
-            else if (materializer is ChainMaterializer && ((ChainMaterializer)materializer).Next == null)
+            else if (materializer is ChainMaterializer<T> chainMaterializer && chainMaterializer.Next == null)
             {
-                ((ChainMaterializer)materializer).Next = new ListAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType ?? SourceType);
+                chainMaterializer.Next = new ListAzureSearchMaterializer<T>(itemProjector ?? DefaultItemProjector, finalItemType ?? typeof(T));
             }
         }
 
@@ -129,14 +112,14 @@ namespace AzureSearchToolkit.Request.Visitors
                 case "LuceneQuery":
                     if (m.Arguments.Count > 1)
                     {
-                        return VisitSearchQuery(QueryType.Full, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
+                        return VisitSearchQuery(SearchQueryType.Full, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
                     }
 
                     throw GetOverloadUnsupportedException(m.Method);
                 case "SimpleQuery":
                     if (m.Arguments.Count > 1)
                     {
-                        return VisitSearchQuery(QueryType.Simple, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
+                        return VisitSearchQuery(SearchQueryType.Simple, m.Arguments[0], m.Arguments[1], m.Arguments[2], m.Arguments[3]);
                     }
 
                     throw GetOverloadUnsupportedException(m.Method);
@@ -219,12 +202,12 @@ namespace AzureSearchToolkit.Request.Visitors
                 case "LongCount":
                     if (m.Arguments.Count == 1)
                     {
-                        return VisitCount(m.Arguments[0], null, m.Method.ReturnType);
+                        return VisitCount(m.Arguments[0] as Expression, null, m.Method.ReturnType);
                     }
 
                     if (m.Arguments.Count == 2)
                     {
-                        return VisitCount(m.Arguments[0], m.Arguments[1], m.Method.ReturnType);
+                        return VisitCount(m.Arguments[0] as Expression, m.Arguments[1], m.Method.ReturnType);
                     }
 
                     throw GetOverloadUnsupportedException(m.Method);
@@ -232,12 +215,12 @@ namespace AzureSearchToolkit.Request.Visitors
                 case "Any":
                     if (m.Arguments.Count == 1)
                     {
-                        return VisitAny(m.Arguments[0], null);
+                        return VisitAny(m.Arguments[0] as Expression, null);
                     }
 
                     if (m.Arguments.Count == 2)
                     {
-                        return VisitAny(m.Arguments[0], m.Arguments[1]);
+                        return VisitAny(m.Arguments[0] as Expression, m.Arguments[1]);
                     }
 
                     throw GetOverloadUnsupportedException(m.Method);
@@ -254,8 +237,9 @@ namespace AzureSearchToolkit.Request.Visitors
 
         Expression VisitAny(Expression source, Expression predicate)
         {
-            materializer = new AnyAzureSearchMaterializer();
-            searchRequest.SearchParameters.Top = 1;
+            materializer = new AnyAzureSearchMaterializer<T>();
+            searchRequest.SearchOptions.IncludeTotalCount = true;
+            searchRequest.SearchOptions.Size = 0;
 
             return predicate != null
                 ? VisitWhere(source, predicate)
@@ -265,9 +249,9 @@ namespace AzureSearchToolkit.Request.Visitors
 
         Expression VisitCount(Expression source, Expression predicate, Type returnType)
         {
-            materializer = new CountAzureSearchMaterializer(returnType);
-            searchRequest.SearchParameters.IncludeTotalResultCount = true;
-            searchRequest.SearchParameters.Top = 0;
+            materializer = new CountAzureSearchMaterializer<T>(returnType);
+            searchRequest.SearchOptions.IncludeTotalCount = true;
+            searchRequest.SearchOptions.Size = 0;
 
             return predicate != null
                 ? VisitWhere(source, predicate)
@@ -279,9 +263,9 @@ namespace AzureSearchToolkit.Request.Visitors
             var single = methodName.StartsWith("Single", StringComparison.Ordinal);
             var orDefault = methodName.EndsWith("OrDefault", StringComparison.Ordinal);
 
-            searchRequest.SearchParameters.Top = single ? 2 : 1;
+            searchRequest.SearchOptions.Size = single ? 2 : 1;
             finalItemType = source.Type;
-            materializer = new OneAzureSearchMaterializer(itemProjector ?? DefaultItemProjector, finalItemType, single, orDefault);
+            materializer = new OneAzureSearchMaterializer<T>(single, orDefault);
 
             return predicate != null
                 ? VisitWhere(source, predicate)
@@ -334,7 +318,7 @@ namespace AzureSearchToolkit.Request.Visitors
 
             if (memberExpr != null)
             {
-                var fieldName = Mapping.GetFieldName(SourceType, memberExpr);
+                var fieldName = GetFieldName(typeof(T), memberExpr);
 
                 if (!string.IsNullOrWhiteSpace(fieldName))
                 {
@@ -359,7 +343,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 {
                     orderBy += " desc";
                 }
-                
+
                 searchRequest.AddOrderByField(orderBy);
             }
 
@@ -410,9 +394,9 @@ namespace AzureSearchToolkit.Request.Visitors
             return Visit(source);
         }
 
-        Expression VisitSearchQuery(QueryType searchType, Expression source, Expression searchTextExpression, Expression searchModeExpression, Expression searchFieldsExpression)
+        Expression VisitSearchQuery(SearchQueryType searchType, Expression source, Expression searchTextExpression, Expression searchModeExpression, Expression searchFieldsExpression)
         {
-            var searchText = ((ConstantExpression)searchTextExpression).Value as string;         
+            var searchText = ((ConstantExpression)searchTextExpression).Value as string;
 
             Argument.EnsureNotBlank(nameof(searchTextExpression), searchText);
             Argument.EnsureNotNull(nameof(searchModeExpression), ((ConstantExpression)searchModeExpression).Value);
@@ -423,10 +407,10 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 throw new NotSupportedException("Only one SimpleQuery or LuceneQuery per LINQ expression is supported!");
             }
-         
+
             searchRequest.SearchText = searchText;
-            searchRequest.SearchParameters.SearchMode = searchMode;
-            searchRequest.SearchParameters.QueryType = searchType;
+            searchRequest.SearchOptions.SearchMode = searchMode;
+            searchRequest.SearchOptions.QueryType = searchType;
 
             if (searchFieldsExpression is NewArrayExpression)
             {
@@ -434,9 +418,16 @@ namespace AzureSearchToolkit.Request.Visitors
 
                 if (searchFieldArrayExpressions?.Any() == true)
                 {
-                    searchRequest.SearchParameters.SearchFields = searchFieldArrayExpressions
-                        .Select(q => Mapping.GetFieldName(TypeHelper.GetSequenceElementType(source.Type), q.GetLambda().Body as MemberExpression))
-                        .ToList();
+                    var fields = searchFieldArrayExpressions
+                                    .AsParallel()
+                                    .Select(q => GetFieldName(
+                                                    TypeHelper.GetSequenceElementType(source.Type),
+                                                    q.GetLambda().Body as MemberExpression));
+                    var searchFields = searchRequest.SearchOptions.SearchFields;
+                    foreach (var field in fields)
+                    {
+                        searchFields.Add(field);
+                    }
                 }
             }
 
@@ -465,7 +456,7 @@ namespace AzureSearchToolkit.Request.Visitors
         /// <param name="entityParameter">Parameter that references the whole entity.</param>
         void RebindElasticFieldsAndChainProjector(Expression selectExpression, ParameterExpression entityParameter)
         {
-            var projection = AzureSearchFieldsExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);
+            var projection = AzureSearchFieldsExpressionVisitor.Rebind(typeof(T), selectExpression);
             var compiled = Expression.Lambda(projection.Item1, entityParameter, projection.Item2).Compile();
 
             itemProjector = h => compiled.DynamicInvoke(DefaultItemProjector(h), h);
@@ -478,7 +469,7 @@ namespace AzureSearchToolkit.Request.Visitors
         /// <param name="selectExpression">Select expression to re-bind.</param>
         void RebindPropertiesAndElasticFields(Expression selectExpression)
         {
-            var projection = MemberProjectionExpressionVisitor.Rebind(SourceType, Mapping, selectExpression);
+            var projection = MemberProjectionExpressionVisitor.Rebind(typeof(T), selectExpression);
             var compiled = Expression.Lambda(projection.Expression, projection.Parameter).Compile();
 
             itemProjector = h => compiled.DynamicInvoke(h);
@@ -492,7 +483,7 @@ namespace AzureSearchToolkit.Request.Visitors
 
             if (skipConstant != null)
             {
-                searchRequest.SearchParameters.Skip = (int)skipConstant.Value;
+                searchRequest.SearchOptions.Skip = (int)skipConstant.Value;
             }
 
             return Visit(source);
@@ -506,8 +497,8 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 var takeValue = (int)takeConstant.Value;
 
-                searchRequest.SearchParameters.Top = searchRequest.SearchParameters.Top.HasValue
-                    ? Math.Min(searchRequest.SearchParameters.Top.GetValueOrDefault(), takeValue)
+                searchRequest.SearchOptions.Size = searchRequest.SearchOptions.Size.HasValue
+                    ? Math.Min(searchRequest.SearchOptions.Size.GetValueOrDefault(), takeValue)
                     : takeValue;
             }
 

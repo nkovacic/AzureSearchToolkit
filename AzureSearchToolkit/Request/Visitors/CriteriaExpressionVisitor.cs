@@ -1,27 +1,86 @@
-﻿using AzureSearchToolkit.Mapping;
-using AzureSearchToolkit.Request;
-using AzureSearchToolkit.Request.Criteria;
+﻿using AzureSearchToolkit.Request.Criteria;
 using AzureSearchToolkit.Request.Expressions;
 using AzureSearchToolkit.Utilities;
-using Microsoft.Azure.Search.Models;
+
 using Microsoft.Spatial;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureSearchToolkit.Request.Visitors
 {
-    internal abstract class CriteriaExpressionVisitor: ExpressionVisitor
+    internal abstract class CriteriaExpressionVisitor<T> : ExpressionVisitor
     {
-        protected readonly IAzureSearchMapping Mapping;
-        protected readonly Type SourceType;
+        private static Dictionary<Type, Dictionary<string, string>> mappedPropertiesCache = new Dictionary<Type, Dictionary<string, string>>();
 
-        protected CriteriaExpressionVisitor(IAzureSearchMapping mapping, Type sourceType)
+        private readonly JsonSerializerOptions jsonOptions;
+
+        protected CriteriaExpressionVisitor(JsonSerializerOptions jsonOptions)
         {
-            Mapping = mapping;
-            SourceType = sourceType;
+            this.jsonOptions = jsonOptions;
+        }
+
+        private Dictionary<string, string> GetMappedPropertiesForType(Type sourceType)
+        {
+            if (!mappedPropertiesCache.ContainsKey(sourceType))
+            {
+                mappedPropertiesCache.Add(sourceType, new Dictionary<string, string>());
+                var camelCasePropertyAttribute = sourceType.GetCustomAttribute<JsonPropertyNameAttribute>(inherit: true);
+                foreach (var property in sourceType.GetProperties())
+                {
+                    var propertyName = jsonOptions.PropertyNamingPolicy.ConvertName(property.Name);
+                    mappedPropertiesCache[sourceType].Add(property.Name, propertyName);
+                }
+            }
+            return mappedPropertiesCache[sourceType];
+        }
+
+        /// <summary>
+        /// Get the AzureSearch field name for a given member.
+        /// </summary>
+        /// <param name="type">The prefix to put in front of this field name, if the field is
+        /// an ongoing part of the document search.</param>
+        /// <param name="memberInfo">The member whose field name is required.</param>
+        /// <returns>The AzureSearch field name that matches the member.</returns>
+        public virtual string GetFieldName(Type type, MemberInfo memberInfo)
+        {
+            Argument.EnsureNotNull(nameof(type), type);
+            Argument.EnsureNotNull(nameof(memberInfo), memberInfo);
+
+            var propertyName = memberInfo.Name;
+
+            var mappedProperties = GetMappedPropertiesForType(type);
+
+            var mappedProperty = mappedProperties[propertyName];
+
+            if (!mappedProperties.TryGetValue(propertyName, out var name))
+            {
+                return name;
+            }
+            else
+            {
+                throw new KeyNotFoundException($"Property {propertyName} was not found on {type}.");
+            }
+        }
+
+        /// <inheritdoc/>
+        public string GetFieldName(Type type, MemberExpression memberExpression)
+        {
+            Argument.EnsureNotNull(nameof(memberExpression), memberExpression);
+            switch (memberExpression.Expression.NodeType)
+            {
+                case ExpressionType.MemberAccess:
+                case ExpressionType.Parameter:
+                    return GetFieldName(type, memberExpression.Member);
+                default:
+                    throw new NotSupportedException($"Unknown expression type {memberExpression.Expression.NodeType} for left hand side of expression {memberExpression}");
+            }
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -29,19 +88,19 @@ namespace AzureSearchToolkit.Request.Visitors
             if (node.Method.DeclaringType == typeof(string))
             {
                 return VisitStringMethodCall(node);
-            }             
+            }
 
             if (node.Method.DeclaringType == typeof(Enumerable))
             {
                 return VisitEnumerableMethodCall(node);
             }
-                
+
 
             if (node.Method.DeclaringType == typeof(AzureSearchMethods))
             {
                 return VisitAzureSearchMethodsMethodCall(node);
             }
-                
+
             return VisitDefaultMethodCall(node);
         }
 
@@ -54,12 +113,12 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitEquals(Visit(m.Object), Visit(m.Arguments[0]));
                     }
-                        
+
                     if (m.Arguments.Count == 2)
                     {
                         return VisitEquals(Visit(m.Arguments[0]), Visit(m.Arguments[1]));
                     }
-                        
+
                     break;
 
                 case "Contains":
@@ -67,7 +126,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitEnumerableContainsMethodCall(m.Object, m.Arguments[0]);
                     }
-                        
+
                     break;
             }
 
@@ -83,7 +142,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitContains("ContainsAny", m.Arguments[0], m.Arguments[1], TermsOperator.Any);
                     }
-                        
+
                     break;
 
                 case "ContainsAll":
@@ -91,7 +150,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitContains("ContainsAll", m.Arguments[0], m.Arguments[1], TermsOperator.All);
                     }
-                        
+
                     break;
                 case "Distance":
                     if (m.Arguments.Count == 2)
@@ -127,7 +186,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "/.*{0}.*/", m.Method.Name);
                     }
-                        
+
                     break;
 
                 case "StartsWith": // Where(x => x.StringProperty.StartsWith(value))
@@ -135,7 +194,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "{0}*", m.Method.Name);
                     }
-                        
+
                     break;
 
                 case "EndsWith": // Where(x => x.StringProperty.EndsWith(value))
@@ -143,7 +202,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return VisitStringPatternCheckMethodCall(m.Object, m.Arguments[0], "/.*{0}/", m.Method.Name);
                     }
-                       
+
                     break;
             }
 
@@ -164,7 +223,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         return new CriteriaExpression(NotCriteria.Create(subExpression.Criteria));
                     }
-                        
+
                     break;
             }
 
@@ -186,7 +245,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     {
                         memberName = node.Member.DeclaringType.Name + "." + node.Member.Name;
                     }
-                        
+
                     throw new NotSupportedException($"{memberName} is of unsupported type {node.Expression.NodeType}");
             }
         }
@@ -236,7 +295,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 {
                     return new CriteriaExpression(ConstantCriteria.True);
                 }
-                    
+
                 if (c.Value.Equals(false))
                 {
                     return new CriteriaExpression(ConstantCriteria.False);
@@ -262,7 +321,7 @@ namespace AzureSearchToolkit.Request.Visitors
             if (source is ConstantExpression && matched is MemberExpression)
             {
                 var memberExpression = (MemberExpression)matched;
-                var field = Mapping.GetFieldName(SourceType, memberExpression);
+                var field = GetFieldName(typeof(T), memberExpression);
                 var containsSource = ((IEnumerable)((ConstantExpression)source).Value);
 
                 // If criteria contains a null create an Or criteria with Terms on one
@@ -286,7 +345,7 @@ namespace AzureSearchToolkit.Request.Visitors
                 var memberExpression = (MemberExpression)source;
                 var value = ((ConstantExpression)matched).Value;
 
-                var field = Mapping.GetFieldName(SourceType, memberExpression);
+                var field = GetFieldName(typeof(T), memberExpression);
 
                 return new CriteriaExpression(TermsCriteria.Build(field, memberExpression.Member, value));
             }
@@ -302,7 +361,7 @@ namespace AzureSearchToolkit.Request.Visitors
 
             if (source is MemberExpression && matched is ConstantExpression)
             {
-                var field = Mapping.GetFieldName(SourceType, (MemberExpression)source);
+                var field = GetFieldName(typeof(T), (MemberExpression)source);
                 var value = ((ConstantExpression)matched).Value;
 
                 return new CriteriaExpression(new QueryStringCriteria(string.Format(pattern, value), field));
@@ -325,14 +384,14 @@ namespace AzureSearchToolkit.Request.Visitors
                 OrCriteria.Combine(CombineExpressions<CriteriaExpression>(b.Left, b.Right).Select(f => f.Criteria).ToArray()));
         }
 
-        IEnumerable<T> CombineExpressions<T>(params Expression[] expressions) where T : Expression
+        IEnumerable<TExpr> CombineExpressions<TExpr>(params Expression[] expressions) where TExpr : Expression
         {
             foreach (var expression in expressions.Select(BooleanMemberAccessBecomesEquals))
             {
-                if ((expression as T) == null)
+                if ((expression as TExpr) == null)
                     throw new NotSupportedException($"Unexpected binary expression '{expression}'");
 
-                yield return (T)expression;
+                yield return (TExpr)expression;
             }
         }
 
@@ -344,7 +403,7 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 var values = ((IEnumerable)cm.ConstantExpression.Value).Cast<object>().ToArray();
 
-                return new CriteriaExpression(TermsCriteria.Build(executionMode, Mapping.GetFieldName(SourceType, cm.MemberExpression), cm.MemberExpression.Member, values));
+                return new CriteriaExpression(TermsCriteria.Build(executionMode, GetFieldName(typeof(T), cm.MemberExpression), cm.MemberExpression.Member, values));
             }
 
             throw new NotSupportedException(methodName + " must be between a Member and a Constant");
@@ -358,7 +417,7 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 var value = ((GeographyPoint)cm.ConstantExpression.Value);
 
-                return new CriteriaExpression(new DistanceCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), cm.MemberExpression.Member, value, null));
+                return new CriteriaExpression(new DistanceCriteria(GetFieldName(typeof(T), cm.MemberExpression), cm.MemberExpression.Member, value, null));
             }
 
             throw new NotSupportedException("Distance must be between a Member and a Constant");
@@ -366,7 +425,7 @@ namespace AzureSearchToolkit.Request.Visitors
 
         Expression CreateExists(ConstantMemberPair cm, bool positiveTest)
         {
-            var fieldName = Mapping.GetFieldName(SourceType, UnwrapNullableMethodExpression(cm.MemberExpression));
+            var fieldName = GetFieldName(typeof(T), UnwrapNullableMethodExpression(cm.MemberExpression));
 
             var value = cm.ConstantExpression.Value ?? false;
 
@@ -390,16 +449,16 @@ namespace AzureSearchToolkit.Request.Visitors
             if (booleanEquals != null)
             {
                 return booleanEquals;
-            }        
+            }
 
             var cm = ConstantMemberPair.Create(left, right);
 
             if (cm != null)
             {
-                
+
                 return cm.IsNullTest
                     ? CreateExists(cm, true)
-                    : new CriteriaExpression(new ComparisonCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), 
+                    : new CriteriaExpression(new ComparisonCriteria(GetFieldName(typeof(T), cm.MemberExpression),
                         cm.MemberExpression.Member, Comparison.Equal, cm.ConstantExpression.Value));
             }
 
@@ -415,12 +474,12 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 return null;
             }
-                
+
             if (constant.Value.Equals(positiveCondition))
             {
                 return criteria;
             }
-                
+
             if (constant.Value.Equals(!positiveCondition))
             {
                 return new CriteriaExpression(NotCriteria.Create(criteria.Criteria));
@@ -454,7 +513,7 @@ namespace AzureSearchToolkit.Request.Visitors
 
             return cm.IsNullTest
                 ? CreateExists(cm, false)
-                : new CriteriaExpression(new ComparisonCriteria(Mapping.GetFieldName(SourceType, cm.MemberExpression), 
+                : new CriteriaExpression(new ComparisonCriteria(GetFieldName(typeof(T), cm.MemberExpression),
                         cm.MemberExpression.Member, Comparison.NotEqual, cm.ConstantExpression.Value));
         }
 
@@ -473,7 +532,7 @@ namespace AzureSearchToolkit.Request.Visitors
                     throw new NotSupportedException("A {0} must test a constant against a member");
                 }
 
-                var field = Mapping.GetFieldName(SourceType, cm.MemberExpression);
+                var field = GetFieldName(typeof(T), cm.MemberExpression);
                 var comparisonCriteria = new ComparisonCriteria(field, cm.MemberExpression.Member, rangeComparison, cm.ConstantExpression.Value);
 
                 return new CriteriaExpression(inverted ? comparisonCriteria.Negate() : comparisonCriteria);
@@ -481,7 +540,7 @@ namespace AzureSearchToolkit.Request.Visitors
             else
             {
                 var distanceCriteria = existingCriteriaExpression.Criteria as DistanceCriteria;
-                
+
                 if (distanceCriteria != null)
                 {
                     var constantExpression = right as ConstantExpression;

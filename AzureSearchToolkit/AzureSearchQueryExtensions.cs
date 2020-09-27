@@ -1,6 +1,6 @@
-﻿using AzureSearchToolkit.Request;
+﻿using Azure.Search.Documents.Models;
+using AzureSearchToolkit.Request;
 using AzureSearchToolkit.Utilities;
-using Microsoft.Azure.Search.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

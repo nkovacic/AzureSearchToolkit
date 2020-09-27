@@ -1,6 +1,5 @@
-﻿using AzureSearchToolkit.Async;
-using AzureSearchToolkit.Logging;
-using AzureSearchToolkit.Mapping;
+﻿using Azure.Core.Serialization;
+using Azure.Search.Documents;
 using AzureSearchToolkit.Request.Formatters;
 using AzureSearchToolkit.Request.Visitors;
 using AzureSearchToolkit.Utilities;
@@ -11,51 +10,43 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace AzureSearchToolkit
 {
-    public sealed class AzureSearchQueryProvider : IQueryProvider, IAsyncQueryExecutor
+    public sealed class AzureSearchQueryProvider<T> : IQueryProvider
     {
-        internal IAzureSearchConnection Connection { get; private set; }
-
-        internal ILogger Logger { get; }
-
-        internal IAzureSearchMapping Mapping { get;}
-
-        internal Type SearchType { get; }
+        internal SearchClient SearchClient { get; private set; }
+        private readonly JsonSerializerOptions jsonOptions;
 
         /// <summary>
         /// Create a new AzureSearchQueryProvider for a given connection, logger and field prefix.
         /// </summary>
-        /// <param name="connection">Connection to use to connect to Elasticsearch.</param>
-        /// <param name="mapping">A mapping to specify how queries and results are translated.</param>
-        /// <param name="log">A log to receive any information or debugging messages.</param>
-        /// <param name="retryPolicy">A policy to describe how to handle network issues.</param>
-        public AzureSearchQueryProvider(IAzureSearchConnection connection, IAzureSearchMapping mapping, Type searchType, ILogger logger)
+        /// <param name="searchClient">Connection to use to connect to Elasticsearch.</param>
+        public AzureSearchQueryProvider(SearchClient searchClient, JsonSerializerOptions jsonOptions)
         {
-            Argument.EnsureNotNull(nameof(connection), connection);
-            Argument.EnsureNotNull(nameof(mapping), mapping);
-            Argument.EnsureNotNull(nameof(logger), logger);
+            Argument.EnsureNotNull(nameof(searchClient), searchClient);
 
-            Connection = connection;
-            Mapping = mapping;
-            SearchType = searchType;
-            Logger = logger;
+            SearchClient = searchClient;
+            this.jsonOptions = jsonOptions;
         }
 
         /// <inheritdoc />
-        public IQueryable<T> CreateQuery<T>(Expression expression)
+        IQueryable<TResult> IQueryProvider.CreateQuery<TResult>(Expression expression)
         {
+            if (!typeof(TResult).IsAssignableFrom(typeof(T)))
+                throw new NotSupportedException();
+
             Argument.EnsureNotNull(nameof(expression), expression);
 
-            if (!typeof(IQueryable<T>).IsAssignableFrom(expression.Type))
+            if (!typeof(IQueryable<TResult>).IsAssignableFrom(expression.Type))
             {
                 throw new ArgumentOutOfRangeException(nameof(expression));
-            }               
+            }
 
-            return new AzureSearchQuery<T>(this, expression);
+            return new AzureSearchQuery<T, TResult>(this, expression);
         }
 
         /// <inheritdoc />
@@ -64,7 +55,7 @@ namespace AzureSearchToolkit
             Argument.EnsureNotNull(nameof(expression), expression);
 
             var elementType = TypeHelper.GetSequenceElementType(expression.Type);
-            var queryType = typeof(AzureSearchQuery<>).MakeGenericType(elementType);
+            var queryType = typeof(AzureSearchQuery<,>).MakeGenericType(typeof(T), elementType);
 
             try
             {
@@ -87,37 +78,12 @@ namespace AzureSearchToolkit
         /// <inheritdoc/>
         public object Execute(Expression expression)
         {
-            return AsyncHelper.RunSync(() => ExecuteAsync<object>(expression));
-        }
-
-        /// <inheritdoc/>
-        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default(CancellationToken)) where TResult: class
-        {
-            return (TResult)await ExecuteAsync(expression, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public async Task<object> ExecuteAsync(Expression expression, CancellationToken cancellationToken = default(CancellationToken))
-        {
             Argument.EnsureNotNull(nameof(expression), expression);
-
-            var translation = AzureSearchQueryTranslator.Translate(Mapping, expression);
-
-            try
-            {
-                var formatter = new SearchRequestFormatter(Mapping, translation.SearchRequest);
-
-                var response = await Connection.SearchAsync(formatter.SearchRequest.SearchParameters,
-                    SearchType, translation.SearchRequest.SearchText, Logger);
-
-                return translation.Materializer.Materialize(response);
-            }
-            catch (Exception e)
-            {
-                ExceptionDispatchInfo.Capture(e).Throw();
-
-                return null;
-            }
+            var translation = AzureSearchQueryTranslator<T>.Translate(expression, jsonOptions);
+            var formatter = new SearchRequestFormatter(translation.SearchRequest);
+            var searchRequest = formatter.SearchRequest;
+            var response = SearchClient.Search<T>(searchRequest.SearchText, searchRequest.SearchOptions);
+            return translation.Materializer.Materialize(response);
         }
     }
 }

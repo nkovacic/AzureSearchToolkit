@@ -1,5 +1,6 @@
-﻿using AzureSearchToolkit.Request.Criteria;
-using Microsoft.Azure.Search.Models;
+﻿using Azure.Search.Documents;
+using Azure.Search.Documents.Models;
+using AzureSearchToolkit.Request.Criteria;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,15 +12,15 @@ namespace AzureSearchToolkit.Request
     {
         public string SearchText { get; set; }
         public ICriteria Criteria { get; set; }
-        public SearchParameters SearchParameters { get; }
+        public SearchOptions SearchOptions { get; }
 
         public AzureSearchRequest()
         {
-            SearchParameters = new SearchParameters
+            SearchOptions = new SearchOptions
             {
-                QueryType = QueryType.Simple,
+                QueryType = SearchQueryType.Simple,
                 SearchMode = SearchMode.All,
-                Top = 200
+                Size = 200
             };
             SearchText = "*";
         }
@@ -31,50 +32,35 @@ namespace AzureSearchToolkit.Request
 
         public void AddOrderByFields(string[] orderByFields, bool addToStart = true)
         {
-            if (SearchParameters.OrderBy == null)
-            {
-                SearchParameters.OrderBy = new List<string>();
-            }
-
             if (addToStart)
             {
                 foreach (var field in orderByFields.Reverse())
                 {
-                    SearchParameters.OrderBy.Insert(0, field);
+                    SearchOptions.OrderBy.Insert(0, field);
                 }
             }
             else
             {
                 foreach (var field in orderByFields)
                 {
-                    SearchParameters.OrderBy.Add(field);
+                    SearchOptions.OrderBy.Add(field);
                 }
             }
         }
 
         public void AddRangeToSelect(params string[] fields)
         {
-            if (SearchParameters.Select == null)
-            {
-                SearchParameters.Select = new List<string>();
-            }
-
             foreach (var field in fields)
             {
-                SearchParameters.Select.Add(field);
+                SearchOptions.Select.Add(field);
             }
         }
 
         public void AddRangeToSearchFields(params string[] searchFields)
         {
-            if (SearchParameters.Select == null)
-            {
-                SearchParameters.SearchFields = new List<string>();
-            }
-
             foreach (var field in searchFields)
             {
-                SearchParameters.SearchFields.Add(field);
+                SearchOptions.SearchFields.Add(field);
             }
         }
     }

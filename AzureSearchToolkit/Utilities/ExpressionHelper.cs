@@ -16,7 +16,7 @@ namespace AzureSearchToolkit.Utilities
         public static PropertyInfo GetPropertyInfo<TSource>(Expression<Func<TSource, object>> propertyLambda)
         {
             Argument.EnsureNotNull(nameof(propertyLambda), propertyLambda);
-          
+
             var type = typeof(TSource);
             MemberExpression member = propertyLambda.Body as MemberExpression;
 
@@ -24,7 +24,7 @@ namespace AzureSearchToolkit.Utilities
             {
                 throw new ArgumentException($"Expression '{propertyLambda}' refers to a method, not a property.");
             }
-                
+
             var propInfo = member.Member as PropertyInfo;
 
             if (propInfo == null)

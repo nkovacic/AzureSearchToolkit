@@ -1,6 +1,4 @@
 ﻿using AzureSearchToolkit.Attributes;
-using Microsoft.Azure.Search;
-using Microsoft.Azure.Search.Models;
 using Microsoft.Spatial;
 using System;
 using System.Collections.Generic;

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AzureSearchToolkit
 {
-    public interface IAzureSearchQuery<out T> : IOrderedQueryable<T>
+    public interface IAzureSearchQuery<TSource, out TTarget> : IOrderedQueryable<TTarget>
     {
     }
 }

@@ -1,49 +1,47 @@
 ﻿using Microsoft.Spatial;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AzureSearchToolkit.Json
 {
-    public class GeographyPointJsonConverter : JsonConverter
+    public class GeographyPointJsonConverter : JsonConverter<GeographyPoint>
     {
         public override bool CanConvert(Type objectType)
         {
             return typeof(GeographyPoint).IsAssignableFrom(objectType);
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override GeographyPoint Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType != JsonToken.Null)
+            if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException();
+            var properties = new Dictionary<string, double>(2);
+            reader.Read();
+            while (reader.TokenType != JsonTokenType.EndObject)
             {
-                var jo = JObject.Load(reader);
-
-                var latitudeProperty = jo.GetValue("latitude");
-                var longitudeProperty = jo.GetValue("longitude");
-
-                if (latitudeProperty != null && longitudeProperty != null)
+                var propertyName = reader.GetString();
+                reader.Read();
+                switch (propertyName)
                 {
-                    return GeographyPoint.Create(latitudeProperty.ToObject<double>(), longitudeProperty.ToObject<double>());
+                    case "latitude":
+                        properties.Add("latitude", reader.GetDouble());
+                        break;
+                    case "longitude":
+                        properties.Add("longitude", reader.GetDouble());
+                        break;
                 }
             }
-            
-            return null;
+            return GeographyPoint.Create(properties["latitude"], properties["longitude"]);
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, GeographyPoint value, JsonSerializerOptions options)
         {
-            if (value is GeographyPoint geographyPoint)
-            {
-                var geographyPointJson = new JObject
-                {
-                    { "latitude", geographyPoint.Latitude },
-                    { "longitude", geographyPoint.Longitude }
-                };
-
-                geographyPointJson.WriteTo(writer);
-            }
+            writer.WriteStartObject();
+            writer.WriteNumber("latitude", value.Latitude);
+            writer.WriteNumber("longitude", value.Longitude);
+            writer.WriteEndObject();
         }
     }
 }
