@@ -18,7 +18,7 @@ namespace AzureSearchToolkit.Utilities
             {
                 expression = ((UnaryExpression)expression).Operand;
             }
-                
+
             return expression;
         }
 

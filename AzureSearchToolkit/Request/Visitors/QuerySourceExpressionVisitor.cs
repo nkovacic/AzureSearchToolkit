@@ -26,7 +26,7 @@ namespace AzureSearchToolkit.Request.Visitors
             {
                 sourceQueryable = ((IQueryable)node.Value);
             }
-                
+
             return node;
         }
     }

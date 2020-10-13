@@ -1,5 +1,5 @@
-﻿using Microsoft.Azure.Search.Models;
-using Microsoft.Rest.Azure;
+﻿using Azure;
+using Azure.Search.Documents.Models;
 using System;
 
 namespace AzureSearchToolkit.Response.Materializers
@@ -7,10 +7,9 @@ namespace AzureSearchToolkit.Response.Materializers
     /// <summary>
     /// Materializes a count operation by obtaining the total document count from the response.
     /// </summary>
-    class CountAzureSearchMaterializer : IAzureSearchMaterializer
+    class CountAzureSearchMaterializer<T> : IAzureSearchMaterializer<T>
     {
-        readonly Type returnType;
-
+        private readonly Type returnType;
         public CountAzureSearchMaterializer(Type returnType)
         {
             this.returnType = returnType;
@@ -21,14 +20,14 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="response">The <see cref="AzureOperationResponse"/> to obtain the count value from.</param>
         /// <returns>The result count expressed as either an int or long depending on the size of the count.</returns>
-        public object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
+        public object Materialize(Response<SearchResults<T>> response)
         {
-            if (response.Body.Count < 0)
+            if (response.Value.TotalCount < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(response), "Contains a negative number of documents.");
-            }  
+            }
 
-            return Convert.ChangeType(response.Body.Count, returnType);
+            return Convert.ChangeType(response.Value.TotalCount, returnType);
         }
     }
 }

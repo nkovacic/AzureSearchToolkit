@@ -1,22 +1,23 @@
-﻿using AzureSearchToolkit.Utilities;
-using Microsoft.Azure.Search.Models;
-using Microsoft.Rest.Azure;
+﻿using Azure;
+using Azure.Search.Documents.Models;
+using AzureSearchToolkit.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AzureSearchToolkit.Response.Materializers
 {
     /// <summary>
     /// Materializes multiple hits into a list of CLR objects.
     /// </summary>
-    class ListAzureSearchMaterializer : IAzureSearchMaterializer
+    class ListAzureSearchMaterializer<T> : IAzureSearchMaterializer<T>
     {
-        static readonly MethodInfo manyMethodInfo = typeof(ListAzureSearchMaterializer).GetMethodInfo(f => f.Name == "Many" && f.IsStatic);
+        static readonly MethodInfo manyMethodInfo = typeof(ListAzureSearchMaterializer<T>).GetMethodInfo(f => f.Name == "Many" && f.IsStatic);
 
-        readonly Func<Document, object> projector;
+        readonly Func<T, object> projector;
         readonly Type elementType;
 
         /// <summary>
@@ -24,7 +25,7 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="projector">A function to turn a hit into a desired CLR object.</param>
         /// <param name="elementType">The type of CLR object being materialized.</param>
-        public ListAzureSearchMaterializer(Func<Document, object> projector, Type elementType)
+        public ListAzureSearchMaterializer(Func<T, object> projector, Type elementType)
         {
             this.projector = projector;
             this.elementType = elementType;
@@ -35,25 +36,26 @@ namespace AzureSearchToolkit.Response.Materializers
         /// </summary>
         /// <param name="response">The <see cref="AzureOperationResponse"/> containing the hits to materialize.</param>
         /// <returns>List of <see cref="elementType"/> objects as constructed by the <see cref="projector"/>.</returns>
-        public object Materialize(AzureOperationResponse<DocumentSearchResult<Document>> response)
+        public object Materialize(Response<SearchResults<T>> response)
         {
             Argument.EnsureNotNull(nameof(response), response);
 
-            var responseBody = response.Body;
+            var responseBody = response.Value;
 
-            if (responseBody?.Results == null || !responseBody.Results.Any())
+            var results = responseBody.GetResults();
+            if (!results.Any())
             {
                 return Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType));
             }
 
             return manyMethodInfo
                 .MakeGenericMethod(elementType)
-                .Invoke(null, new object[] { responseBody.Results.Select(q => q.Document), projector });
+                .Invoke(null, new object[] { results.Select(q => q.Document), projector });
         }
 
-        internal static IReadOnlyList<T> Many<T>(IEnumerable<Document> documents, Func<Document, object> projector)
+        internal static IReadOnlyList<TTarget> Many<TTarget>(IEnumerable<T> documents, Func<T, object> projector)
         {
-            return documents.Select(projector).Cast<T>().ToReadOnlyBatchedList();
+            return documents.Select(projector).Cast<TTarget>().ToReadOnlyBatchedList();
         }
     }
 }

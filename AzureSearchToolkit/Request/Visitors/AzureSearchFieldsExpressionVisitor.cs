@@ -1,6 +1,5 @@
-﻿using AzureSearchToolkit.Mapping;
+﻿using Azure.Search.Documents.Models;
 using AzureSearchToolkit.Utilities;
-using Microsoft.Azure.Search.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -15,23 +14,20 @@ namespace AzureSearchToolkit.Request.Visitors
     class AzureSearchFieldsExpressionVisitor : ExpressionVisitor
     {
         protected readonly ParameterExpression BindingParameter;
-        protected readonly IAzureSearchMapping Mapping;
         protected readonly Type SourceType;
 
-        public AzureSearchFieldsExpressionVisitor(Type sourcetype, ParameterExpression bindingParameter, IAzureSearchMapping mapping)
+        public AzureSearchFieldsExpressionVisitor(Type sourcetype, ParameterExpression bindingParameter)
         {
             Argument.EnsureNotNull(nameof(bindingParameter), bindingParameter);
-            Argument.EnsureNotNull(nameof(mapping), mapping);
 
             SourceType = sourcetype;
             BindingParameter = bindingParameter;
-            Mapping = mapping;
         }
 
-        internal static Tuple<Expression, ParameterExpression> Rebind(Type sourceType, IAzureSearchMapping mapping, Expression selector)
+        internal static Tuple<Expression, ParameterExpression> Rebind(Type sourceType, Expression selector)
         {
-            var parameter = Expression.Parameter(typeof(Document), "h");
-            var visitor = new AzureSearchFieldsExpressionVisitor(sourceType, parameter, mapping);
+            var parameter = Expression.Parameter(typeof(SearchDocument), "h");
+            var visitor = new AzureSearchFieldsExpressionVisitor(sourceType, parameter);
 
             Argument.EnsureNotNull(nameof(selector), selector);
 

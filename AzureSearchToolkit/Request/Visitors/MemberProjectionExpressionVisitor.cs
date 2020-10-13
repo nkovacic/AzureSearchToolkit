@@ -1,6 +1,5 @@
-﻿using AzureSearchToolkit.Mapping;
+﻿using Azure.Search.Documents.Models;
 using AzureSearchToolkit.Utilities;
-using Microsoft.Azure.Search.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -15,15 +14,15 @@ namespace AzureSearchToolkit.Request.Visitors
 
         readonly HashSet<string> fieldNames = new HashSet<string>();
 
-        MemberProjectionExpressionVisitor(Type sourceType, ParameterExpression bindingParameter, IAzureSearchMapping mapping)
-           : base(sourceType, bindingParameter, mapping)
+        MemberProjectionExpressionVisitor(Type sourceType, ParameterExpression bindingParameter)
+           : base(sourceType, bindingParameter)
         {
         }
 
-        internal new static RebindCollectionResult<string> Rebind(Type sourceType, IAzureSearchMapping mapping, Expression selector)
+        internal new static RebindCollectionResult<string> Rebind(Type sourceType, Expression selector)
         {
-            var parameter = Expression.Parameter(typeof(Document), "h");
-            var visitor = new MemberProjectionExpressionVisitor(sourceType, parameter, mapping);
+            var parameter = Expression.Parameter(typeof(SearchDocument), "h");
+            var visitor = new MemberProjectionExpressionVisitor(sourceType, parameter);
 
             Argument.EnsureNotNull(nameof(selector), selector);
 

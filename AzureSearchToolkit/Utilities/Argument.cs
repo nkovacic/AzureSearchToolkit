@@ -65,7 +65,7 @@ namespace AzureSearchToolkit.Utilities
             if (!Enum.IsDefined(typeof(TEnum), value))
             {
                 throw new ArgumentOutOfRangeException(argumentName, $"Must be a defined {typeof(TEnum)} enum value.");
-            }  
+            }
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace AzureSearchToolkit.Utilities
         //    if (values == null || values.Count < 1)
         //    {
         //        throw new ArgumentOutOfRangeException(argumentName, "Must contain one or more values.");
-        //    } 
+        //    }
         //}
     }
 }

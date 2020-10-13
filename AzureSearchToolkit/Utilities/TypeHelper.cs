@@ -110,13 +110,13 @@ namespace AzureSearchToolkit.Utilities
             if (sequenceType == null || sequenceType == typeof(string))
             {
                 return null;
-            }  
+            }
 
             if (sequenceType.IsArray)
             {
                 return typeof(IEnumerable<>).MakeGenericType(sequenceType.GetElementType());
             }
-                
+
             var sequenceTypeInfo = sequenceType.GetTypeInfo();
 
             while (true)
@@ -128,7 +128,7 @@ namespace AzureSearchToolkit.Utilities
                     if (candidateIEnumerable.IsAssignableFrom(sequenceType))
                     {
                         return candidateIEnumerable;
-                    } 
+                    }
                 }
 
                 foreach (var candidateInterface in sequenceTypeInfo.ImplementedInterfaces.Select(FindIEnumerable))
@@ -137,7 +137,7 @@ namespace AzureSearchToolkit.Utilities
                     {
                         return candidateInterface;
                     }
-                } 
+                }
 
                 if (sequenceTypeInfo.BaseType == null || sequenceTypeInfo.BaseType == typeof(object))
                 {
@@ -160,7 +160,7 @@ namespace AzureSearchToolkit.Utilities
             {
                 return false;
             }
-                
+
             return typeof(IEnumerable).IsAssignableFrom(type);
         }
 
@@ -188,7 +188,7 @@ namespace AzureSearchToolkit.Utilities
         }
 
         /// <summary>
-        /// Create a default value for either a value type or reference type. 
+        /// Create a default value for either a value type or reference type.
         /// </summary>
         /// <param name="type">Type of the value to create.</param>
         /// <returns>Default value for this type.</returns>

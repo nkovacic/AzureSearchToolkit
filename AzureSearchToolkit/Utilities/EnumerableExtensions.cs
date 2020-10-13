@@ -12,7 +12,7 @@ namespace AzureSearchToolkit.Utilities
             return new SortedDictionary<T1, T2>(source.ToDictionary(keySelector));
         }
 
-        public static SortedDictionary<TKey, TElement> ToSortedDictionary<TSource, TKey, TElement>(this IEnumerable<TSource> source, 
+        public static SortedDictionary<TKey, TElement> ToSortedDictionary<TSource, TKey, TElement>(this IEnumerable<TSource> source,
             Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector)
         {
             return new SortedDictionary<TKey, TElement>(source.ToDictionary(keySelector, elementSelector));

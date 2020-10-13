@@ -1,8 +1,10 @@
-﻿using AzureSearchToolkit.IntegrationTest.Configuration;
-using AzureSearchToolkit.Logging;
+﻿using Azure.Search.Documents;
+using Azure.Search.Documents.Indexes;
+using Azure.Search.Documents.Models;
+
+using AzureSearchToolkit.IntegrationTest.Configuration;
 using AzureSearchToolkit.Request;
-using Microsoft.Azure.Search;
-using Microsoft.Azure.Search.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,25 +15,25 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 {
     class AzureSearchHelper: IDisposable
     {
-        private string _searchName;
+        private string endpoint;
 
-        private LamaConfiguration _configuration;
-        private SearchServiceClient _serviceClient;
+        private LamaConfiguration configuration;
+        private SearchClient serviceClient;
 
         private ILogger _logger { get; set; }
 
         public AzureSearchHelper(LamaConfiguration configuration, ILogger logger)
         {
-            _configuration = configuration;
+            this.configuration = configuration;
             _logger = logger;
 
-            var searchKey = _configuration.GetModel().SearchKey;
+            var searchKey = this.configuration.GetModel().SearchKey;
 
-            _searchName = _configuration.GetModel().SearchName;
+            endpoint = this.configuration.GetModel().SearchName;
 
-            if (!string.IsNullOrWhiteSpace(_searchName) && !string.IsNullOrWhiteSpace(searchKey))
+            if (!string.IsNullOrWhiteSpace(endpoint) && !string.IsNullOrWhiteSpace(searchKey))
             {
-                _serviceClient = new SearchServiceClient(_searchName, new SearchCredentials(searchKey));
+                serviceClient = new SearchClient(endpoint, new SearchCredentials(searchKey));
             }
         }
 
@@ -44,7 +46,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
             try
             {
-                indexExists = await _serviceClient.Indexes.ExistsAsync(indexName);
+                indexExists = await serviceClient.Indexes.ExistsAsync(indexName);
             }
             catch (Exception e)
             {
@@ -70,7 +72,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
                 try
                 {
-                    var result = await _serviceClient.Indexes.CreateAsync(definition);
+                    var result = await serviceClient.Indexes.CreateAsync(definition);
 
                     if (result != null)
                     {
@@ -79,7 +81,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                 }
                 catch (Exception e)
                 {
-                    _logger.Log(TraceEventType.Error, e, null, "Index {0} was not created!", indexName);
+                    _logger.LogError(e, "Index {indexName} was not created!", indexName);
                 }
             }
 
@@ -137,14 +139,14 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                 return serviceResult.CopyStatus(searchIndexCreateServiceResult);
             }
 
-            var indexActions = new List<IndexAction<T>>();
+            var indexActions = new List<IndexDocumentsAction<T>>();
 
             var documentCounter = 0;
 
             foreach (var document in documents)
             {
                 var crudType = AzureSearchIndexType.Upload;
-                IndexAction<T> indexAction = null;
+                IndexDocumentsAction<T> indexAction = null;
 
                 if (crudTypes.Count() > documentCounter)
                 {
@@ -158,16 +160,16 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                 switch (crudType)
                 {
                     case AzureSearchIndexType.Upload:
-                        indexAction = IndexAction.Upload(document);
+                        indexAction = IndexDocumentsAction.Upload(document);
                         break;
                     case AzureSearchIndexType.Delete:
-                        indexAction = IndexAction.Delete(document);
+                        indexAction = IndexDocumentsAction.Delete(document);
                         break;
                     case AzureSearchIndexType.Merge:
-                        indexAction = IndexAction.Merge(document);
+                        indexAction = IndexDocumentsAction.Merge(document);
                         break;
                     default:
-                        indexAction = IndexAction.MergeOrUpload(document);
+                        indexAction = IndexDocumentsAction.MergeOrUpload(document);
                         break;
                 }
 
@@ -177,7 +179,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
             }
 
             var batch = IndexBatch.New(indexActions);
-            var indexClient = _serviceClient.Indexes.GetClient(indexName);
+            var indexClient = serviceClient.Indexes.GetClient(indexName);
 
             try
             {
@@ -191,19 +193,18 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                 // the batch. Depending on your application, you can take compensating actions like delaying and
                 // retrying. For this simple demo, we just log the failed document keys and continue.
                 serviceResult.SetException(e);
-                _logger.Log(TraceEventType.Error, e, null, "Failed to index some of the documents: {0}",
-                    string.Join(", ", e.IndexingResults.Where(r => !r.Succeeded).Select(r => r.Key)));
+                _logger.LogError(e, $"Failed to index some of the documents: {Environment.NewLine}{{documents}}", e.IndexingResults.Where(r => !r.Succeeded).Select(r => r.Key));
             }
             catch (Exception e)
             {
                 serviceResult.SetException(e);
-                _logger.Log(TraceEventType.Error, e, null, "Search index failed");
+                _logger.LogError(e, "Search index failed");
             }
 
             return serviceResult;
         }
 
-        public async Task<ServiceResult<DocumentSearchResult<T>>> SearchDocuments<T>(SearchParameters searchParameters, string searchText = null,
+        public async Task<ServiceResult<DocumentSearchResult<T>>> SearchDocuments<T>(SearchOptions searchOptions, string searchText = null,
             string indexName = null) where T : class
         {
             var serviceResult = new ServiceResult<DocumentSearchResult<T>>();
@@ -215,7 +216,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
             indexName = GetIndexName<T>(indexName);
 
-            var indexClient = _serviceClient.Indexes.GetClient(indexName);
+            var indexClient = serviceClient.Indexes.GetClient(indexName);
 
             if (indexClient != null)
             {
@@ -223,7 +224,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
                 try
                 {
-                    var response = await indexClient.Documents.SearchWithHttpMessagesAsync<T>(searchText, searchParameters, customHeaders: headers);
+                    var response = await indexClient.Documents.SearchWithHttpMessagesAsync<T>(searchText, searchOptions, customHeaders: headers);
 
                     if (response.Response.IsSuccessStatusCode)
                     {
@@ -233,9 +234,9 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                         {
                             var searchId = headerValues.FirstOrDefault();
 
-                            _logger.Log(TraceEventType.Information, null,  new Dictionary<string, object>
+                            _logger.LogInformation(,  new Dictionary<string, object>
                             {
-                                {"SearchServiceName", _searchName },
+                                {"SearchServiceName", endpoint },
                                 {"SearchId", searchId},
                                 {"IndexName", indexName},
                                 {"QueryTerms", searchText}
@@ -248,7 +249,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                     {
                         serviceResult.SetStatusWithMessage(response.Response.StatusCode, $"Search failed for indexName {indexName}.");
 
-                        _logger.Log(TraceEventType.Warning, null, null, $"Search failed for indexName {indexName}. Reason: {response.Response.ReasonPhrase}");
+                        _logger.LogWarning("Search failed for indexName {indexName}. Reason: {reason}", indexName, response.Response.ReasonPhrase);
                     }
                 }
                 catch (Exception e)
@@ -256,23 +257,22 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                     serviceResult
                         .SetException(e)
                         .SetMessage($"Search failed for indexName {indexName}.");
-                    _logger.Log(TraceEventType.Error, e, null,
-                        $"Search failed for indexName {indexName}. Query text: {searchText}, Query: {searchParameters.ToString()}");
+                    _logger.LogError(e, "Search failed for indexName {indexName}. Query text: {searchText}, Query: {searchOptions}", indexName, searchText, searchOptions);
                 }
             }
 
             return serviceResult;
         }
 
-        public async Task<ServiceResult<long>> CountDocuments<T>(SearchParameters searchParameters, string searchText = null,
+        public async Task<ServiceResult<long>> CountDocuments<T>(SearchOptions searchOptions, string searchText = null,
             string indexName = null) where T : class
         {
             var serviceResult = new ServiceResult<long>();
 
-            searchParameters.Top = 0;
-            searchParameters.IncludeTotalResultCount = true;
+            searchOptions.Top = 0;
+            searchOptions.IncludeTotalResultCount = true;
 
-            var documentSearchServiceResult = await SearchDocuments<T>(searchParameters, searchText, indexName);
+            var documentSearchServiceResult = await SearchDocuments<T>(searchOptions, searchText, indexName);
 
             if (documentSearchServiceResult.IsStatusOk())
             {
@@ -286,20 +286,21 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
             return serviceResult;
         }
 
-        public SearchParameters GetSearchParameters(ApiParameters apiParameters)
+        public SearchOptions GetSearchParameters(ApiParameters apiParameters)
         {
-            var searchParameters = new SearchParameters
+            var searchOptions = new SearchOptions
             {
-                IncludeTotalResultCount = true,
+                IncludeTotalCount = true,
                 SearchMode = SearchMode.Any,
-                Top = apiParameters.Limit,
+                Size = apiParameters.Limit,
                 Skip = (apiParameters.Page - 1) * apiParameters.Limit,
-                QueryType = QueryType.Full
+                QueryType = SearchQueryType.Full
             };
 
             if (apiParameters.IsSearchQuery())
             {
-                searchParameters.SearchFields = apiParameters.GetSplittedQueryBy();
+                var searchFields = searchOptions.SearchFields;
+                apiParameters.GetSplittedQueryBy().ForEach(f => searchFields.Add(f));
             }
 
             var orderBy = "";
@@ -341,9 +342,9 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
                 orderBy = "createdAt desc";
             }
 
-            searchParameters.OrderBy = new List<string> { orderBy };
+            searchOptions.OrderBy.Add(orderBy);
 
-            return searchParameters;
+            return searchOptions;
         }
 
         public string JoinFilters(string firstFilter, string secondFilter, bool isAnd = true)
@@ -549,10 +550,10 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
             var numberOfRetries = 0;
             var numberOfItemsInSearch = -1;
 
-            var searchParemeters = new SearchParameters
+            var searchParemeters = new SearchOptions
             {
-                Top = 1,
-                IncludeTotalResultCount = true
+                Size = 1,
+                IncludeTotalCount = true
             };
 
             do
@@ -595,7 +596,7 @@ namespace AzureSearchToolkit.IntegrationTest.Utilities
 
         public void Dispose()
         {
-            _serviceClient.Dispose();
+            serviceClient.Dispose();
         }
     }
 }
