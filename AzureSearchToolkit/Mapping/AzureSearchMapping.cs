@@ -100,7 +100,12 @@ namespace AzureSearchToolkit.Mapping
 
                 foreach (var property in sourceType.GetProperties())
                 {
-                    if (camelCasePropertyAttribute != null)
+                    var jsonPropertyAttribute = property.GetCustomAttribute<JsonPropertyAttribute>();
+                    if(jsonPropertyAttribute != null)
+                    {
+                        mappedPropertiesCache[sourceType].Add(jsonPropertyAttribute.PropertyName, property.Name);
+                    }
+                    else if (camelCasePropertyAttribute != null)
                     {
                         var camelCasePropertyName = MappingHelper.ToCamelCase(property.Name);
 

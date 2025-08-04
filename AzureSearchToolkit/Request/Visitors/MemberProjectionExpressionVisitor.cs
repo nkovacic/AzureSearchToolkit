@@ -1,11 +1,11 @@
 ﻿using AzureSearchToolkit.Mapping;
 using AzureSearchToolkit.Utilities;
 using Microsoft.Azure.Search.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace AzureSearchToolkit.Request.Visitors
 {
@@ -51,7 +51,7 @@ namespace AzureSearchToolkit.Request.Visitors
         {
             var member = base.VisitAzureSearchField(m);
 
-            fieldNames.Add(m.Member.Name.ToLowerInvariant());
+            fieldNames.Add(NameHelper.GetMemberName(m.Member));
 
             return member;
         }

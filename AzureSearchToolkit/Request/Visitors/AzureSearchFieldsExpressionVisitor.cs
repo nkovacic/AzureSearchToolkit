@@ -40,7 +40,7 @@ namespace AzureSearchToolkit.Request.Visitors
 
         protected virtual Expression VisitAzureSearchField(MemberExpression m)
         {
-            return Expression.Convert(Expression.Property(BindingParameter, "Item", Expression.Constant(m.Member.Name.ToLowerInvariant())), m.Type);
+            return Expression.Convert(Expression.Property(BindingParameter, "Item", Expression.Constant(NameHelper.GetMemberName(m.Member))), m.Type);
         }
     }
 }
